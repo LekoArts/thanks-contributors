@@ -1,0 +1,27 @@
+{
+  "name": "thanks-contributors",
+  "version": "1.0.0",
+  "description": "This little script accesses GitHub's API to get all contributors and their PRs between two distinct points in the history of commits. This is helpful for changelogs where you'd want to list all contributions for that release (so e.g. changes between v1 and v1.1).",
+  "main": "index.js",
+  "scripts": {
+    "eslint": "eslint",
+    "prettier": "prettier",
+    "lint": "eslint . --ext .js",
+    "lint:fix": "yarn lint --fix",
+    "format": "prettier \"**/*.{md,mdx,json,yaml}\" --write"
+  },
+  "keywords": [],
+  "author": "LekoArts <hello@lekoarts.de>",
+  "license": "MIT",
+  "dependencies": {
+    "@octokit/rest": "^18.0.12",
+    "dotenv": "^8.2.0",
+    "fs-extra": "^9.0.1"
+  },
+  "devDependencies": {
+    "eslint": "^7.15.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.22.1",
+    "prettier": "^2.2.1"
+  }
+}
