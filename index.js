@@ -2,7 +2,7 @@ require('dotenv').config()
 const fs = require('fs-extra')
 const { Octokit } = require('@octokit/rest')
 const {
-  owner, repo, startRef, endRef,
+  owner, repo, base, head,
 } = require('./config')
 
 const octokit = new Octokit({
@@ -45,33 +45,46 @@ async function getExcludes(pathName) {
   return list
 }
 
-async function run() {
+async function run({ useCompareAPI = false }) {
   const currentDate = new Date().toISOString()
 
-  const startCommit = await octokit.repos.getCommit({
-    owner,
-    repo,
-    ref: startRef,
-  })
-  const endCommit = await octokit.repos.getCommit({
-    owner,
-    repo,
-    ref: endRef,
-  })
+  let relevantCommits = []
 
-  const startDate = getDate(startCommit)
-  const endDate = getDate(endCommit)
+  if (!useCompareAPI) {
+    const startCommit = await octokit.repos.getCommit({
+      owner,
+      repo,
+      ref: base,
+    })
+    const endCommit = await octokit.repos.getCommit({
+      owner,
+      repo,
+      ref: head,
+    })
 
-  if (!startDate || !endDate) {
-    throw new Error('The function couldn\'t get either the startDate or endDate by checking the commits of the range')
+    const startDate = getDate(startCommit)
+    const endDate = getDate(endCommit)
+
+    if (!startDate || !endDate) {
+      throw new Error('The function couldn\'t get either the startDate or endDate by checking the commits of the range')
+    }
+
+    relevantCommits = await octokit.paginate(octokit.repos.listCommits, {
+      owner,
+      repo,
+      since: startDate,
+      until: endDate,
+    })
+  } else {
+    const res = await octokit.repos.compareCommits({
+      owner,
+      repo,
+      base,
+      head,
+    })
+
+    relevantCommits = res.data.commits
   }
-
-  const relevantCommits = await octokit.paginate(octokit.repos.listCommits, {
-    owner,
-    repo,
-    since: startDate,
-    until: endDate,
-  })
 
   const prRegex = /(.*)\(#([0-9]+)\)/
 
@@ -131,4 +144,4 @@ ${authorEntries}`
   await fs.outputFile(`${__dirname}/output/${currentDate}.md`, text)
 }
 
-run()
+run({ useCompareAPI: true })
