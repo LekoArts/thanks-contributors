@@ -14,7 +14,7 @@ const octokit = new Octokit({
 
 // eslint-disable-next-line prefer-destructuring
 const argv = yargs
-  .usage('Usage: $0 <base> <head> <owner> <repo>')
+  .usage('Usage: $0 <base> <head> [owner] [repo]')
   .command(
     '* <base> <head> [owner] [repo]',
     'First it get\'s the list of commits between base...head (equivalent to git log base..head), then parses their authors out and creates a markdown list of each contributor and their contribution. By default it excludes the members of the (owner) organization. Saves the result into an "output" folder.',
@@ -173,7 +173,7 @@ ${authorEntries}`
     }
   })
 
-  await fs.outputFile(`${__dirname}/output/${currentDate}.md`, text)
+  await fs.outputFile(`${process.cwd()}/output/${currentDate}.md`, text)
 }
 
 module.exports.run = run
