@@ -3,6 +3,11 @@
   "version": "1.0.0",
   "description": "This little script accesses GitHub's API to get all contributors and their PRs between two distinct points in the history of commits. This is helpful for changelogs where you'd want to list all contributions for that release (so e.g. changes between v1 and v1.1).",
   "main": "index.js",
+  "bin": "cli.js",
+  "files": [
+    "index.js",
+    "cli.js"
+  ],
   "scripts": {
     "eslint": "eslint",
     "prettier": "prettier",
@@ -16,7 +21,8 @@
   "dependencies": {
     "@octokit/rest": "^18.0.12",
     "dotenv": "^8.2.0",
-    "fs-extra": "^9.0.1"
+    "fs-extra": "^9.0.1",
+    "yargs": "^16.2.0"
   },
   "devDependencies": {
     "eslint": "^7.15.0",

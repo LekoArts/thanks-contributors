@@ -1,13 +1,45 @@
 require('dotenv').config()
+
+const yargs = require('yargs')
 const fs = require('fs-extra')
 const { Octokit } = require('@octokit/rest')
-const {
-  owner, repo, base, head,
-} = require('./config')
+
+if (!process.env.GITHUB_ACCESS_TOKEN) {
+  throw new Error('GITHUB_ACCESS_TOKEN env var not set')
+}
 
 const octokit = new Octokit({
-  auth: process.env.TOKEN,
+  auth: process.env.GITHUB_ACCESS_TOKEN,
 })
+
+// eslint-disable-next-line prefer-destructuring
+const argv = yargs
+  .usage('Usage: $0 <base> <head> <owner> <repo>')
+  .command(
+    '* <base> <head> [owner] [repo]',
+    'First it get\'s the list of commits between base...head (equivalent to git log base..head), then parses their authors out and creates a markdown list of each contributor and their contribution. By default it excludes the members of the (owner) organization.',
+    (commandBuilder) => commandBuilder
+      .positional('base', { type: 'string', demandOption: true })
+      .positional('head', { type: 'string', demandOption: true })
+      .positional('owner', { type: 'string', default: 'gatsbyjs', demandOption: false })
+      .positional('repo', { type: 'string', default: 'gatsby', demandOption: false }),
+  )
+  .help('h')
+  .alias('h', 'help')
+  .option('useListCommitsAPI', {
+    alias: 'l',
+    type: 'boolean',
+    description: 'Use the "List commits" API (https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#list-commits) instead of the "Compare two commits" API (https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#compare-two-commits)',
+    default: false,
+    demandOption: false,
+  })
+  .option('include', {
+    alias: 'i',
+    type: 'boolean',
+    description: 'Whether to include organization members from the list or not',
+    default: false,
+  })
+  .argv
 
 function getDate(commit) {
   if (
@@ -32,34 +64,21 @@ function groupByKey(list, key) {
   )
 }
 
-async function getExcludes(pathName) {
-  let list = []
-  try {
-    const result = await fs.readJSON(pathName)
-    list = result
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.warn(error)
-  }
-
-  return list
-}
-
-async function run({ useCompareAPI = false }) {
-  const currentDate = new Date().toISOString()
+async function run() {
+  const currentDate = new Date().toISOString().slice(0, 19)
 
   let relevantCommits = []
 
-  if (!useCompareAPI) {
+  if (argv.useListCommitsAPI) {
     const startCommit = await octokit.repos.getCommit({
-      owner,
-      repo,
-      ref: base,
+      owner: argv.owner,
+      repo: argv.repo,
+      ref: argv.base,
     })
     const endCommit = await octokit.repos.getCommit({
-      owner,
-      repo,
-      ref: head,
+      owner: argv.owner,
+      repo: argv.repo,
+      ref: argv.head,
     })
 
     const startDate = getDate(startCommit)
@@ -70,17 +89,17 @@ async function run({ useCompareAPI = false }) {
     }
 
     relevantCommits = await octokit.paginate(octokit.repos.listCommits, {
-      owner,
-      repo,
+      owner: argv.owner,
+      repo: argv.repo,
       since: startDate,
       until: endDate,
     })
   } else {
     const res = await octokit.repos.compareCommits({
-      owner,
-      repo,
-      base,
-      head,
+      owner: argv.owner,
+      repo: argv.repo,
+      base: argv.base,
+      head: argv.head,
     })
 
     relevantCommits = res.data.commits
@@ -93,14 +112,22 @@ async function run({ useCompareAPI = false }) {
     const messageAndNumber = firstLine.match(prRegex)
 
     return {
-      author: c.author.login,
-      authorUrl: c.author.html_url,
+      author: c.author ? c.author.login : c.commit.author.name,
+      authorUrl: c.author ? c.author.html_url : undefined,
       message: messageAndNumber ? messageAndNumber[1].trim() : undefined,
       prNumber: messageAndNumber ? messageAndNumber[2] : undefined,
     }
   })
 
-  const excludes = await getExcludes('./excludes.json')
+  let excludes = ['renovate[bot]']
+
+  if (!argv.include) {
+    const orgMembers = await octokit.paginate(octokit.orgs.listMembers, {
+      org: argv.owner,
+    })
+    const listOfLoginNames = orgMembers.map((o) => o.login)
+    excludes = [...excludes, ...listOfLoginNames]
+  }
 
   const grouped = groupByKey(entries, 'author')
   const filtered = Object.entries(grouped).filter((entry) => !excludes.includes(entry[0]))
@@ -127,21 +154,26 @@ async function run({ useCompareAPI = false }) {
         )
       }).join('')}
 `
+      const authorMD = authorUrl ? `[${authorName}](${authorUrl})` : authorName
+
       text += `
-- [${authorName}](${authorUrl})
+- ${authorMD}
 ${authorEntries}`
     } else {
       const content = authorContent[0]
+
       if (!content.message) {
         return
       }
+      const authorMD = authorUrl ? `[${authorName}](${authorUrl})` : authorName
       const prLink = content.prNumber ? `[PR #${content.prNumber}](https://github.com/gatsbyjs/gatsby/pull/${content.prNumber})` : ''
+
       text += `
-- [${authorName}](${authorUrl}): ${content.message} ${prLink}`
+- ${authorMD}: ${content.message} ${prLink}`
     }
   })
 
   await fs.outputFile(`${__dirname}/output/${currentDate}.md`, text)
 }
 
-run({ useCompareAPI: true })
+module.exports.run = run
