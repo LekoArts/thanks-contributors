@@ -5,7 +5,7 @@ This little script accesses GitHub's API to get all contributors and their PRs b
 ## Usage
 
 ```shell
-cli.js <base> <head> [owner] [repo]
+npx thanks-contributors <base> <head> [owner] [repo]
 
 First it get's the list of commits between base...head (equivalent to git log
 base..head), then parses their authors out and creates a markdown list of each
@@ -41,7 +41,7 @@ The results are stored inside a `./output` folder.
 ### Example
 
 ```shell
-node cli.js gatsby@2.29.0-next.0 gatsby@2.29.0 gatsbyjs gatsby
+npx thanks-contributors gatsby@2.29.0-next.0 gatsby@2.29.0 gatsbyjs gatsby
 ```
 
 ## Resulting output

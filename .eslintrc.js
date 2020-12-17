@@ -14,5 +14,6 @@ module.exports = {
     semi: 0,
     'operator-linebreak': 0,
     'import/prefer-default-export': 0,
+    'no-console': 0,
   },
 };

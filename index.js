@@ -173,7 +173,10 @@ ${authorEntries}`
     }
   })
 
-  await fs.outputFile(`${process.cwd()}/output/${currentDate}.md`, text)
+  const filename = `${process.cwd()}/output/${currentDate}.md`
+  await fs.outputFile(filename, text)
+
+  console.log(`Successfully created ${filename}`)
 }
 
 module.exports.run = run
