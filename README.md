@@ -7,10 +7,10 @@ This little script accesses GitHub's API to get all contributors and their PRs b
 ```shell
 cli.js <base> <head> [owner] [repo]
 
-First it get\'s the list of commits between base...head (equivalent to git log
+First it get's the list of commits between base...head (equivalent to git log
 base..head), then parses their authors out and creates a markdown list of each
 contributor and their contribution. By default it excludes the members of the
-(owner) organization.
+(owner) organization. Saves the result into an "output" folder.
 
 Positionals:
   base                                                                  [string]
@@ -35,6 +35,8 @@ Optionen:
 You must have an environment variable called `GITHUB_ACCESS_TOKEN` either exported in your CLI or defined inside an `.env` file in the root of the project.
 
 The script automatically excludes the members of the organization ("owner" in this case). If you want to exclude specific users, you'll need to edit the `index.js` (at the moment, PRs are welcome).
+
+The results are stored inside a `./output` folder.
 
 ### Example
 

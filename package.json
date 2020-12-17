@@ -15,7 +15,13 @@
     "lint:fix": "yarn lint --fix",
     "format": "prettier \"**/*.{md,mdx,json,yaml}\" --write"
   },
-  "keywords": [],
+  "keywords": [
+    "thanks-contributors",
+    "changelog",
+    "release notes",
+    "contributors",
+    "list of PRs"
+  ],
   "author": "LekoArts <hello@lekoarts.de>",
   "license": "MIT",
   "dependencies": {

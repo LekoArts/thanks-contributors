@@ -1,0 +1,7 @@
+node_modules
+output
+.idea
+.vscode
+.DS_Store
+yarn.lock
+*.log*

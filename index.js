@@ -17,7 +17,7 @@ const argv = yargs
   .usage('Usage: $0 <base> <head> <owner> <repo>')
   .command(
     '* <base> <head> [owner] [repo]',
-    'First it get\'s the list of commits between base...head (equivalent to git log base..head), then parses their authors out and creates a markdown list of each contributor and their contribution. By default it excludes the members of the (owner) organization.',
+    'First it get\'s the list of commits between base...head (equivalent to git log base..head), then parses their authors out and creates a markdown list of each contributor and their contribution. By default it excludes the members of the (owner) organization. Saves the result into an "output" folder.',
     (commandBuilder) => commandBuilder
       .positional('base', { type: 'string', demandOption: true })
       .positional('head', { type: 'string', demandOption: true })
