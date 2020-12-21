@@ -38,6 +38,7 @@ const argv = yargs
     type: 'boolean',
     description: 'Whether to include organization members from the list or not',
     default: false,
+    demandOption: false,
   })
   .argv
 
@@ -65,11 +66,14 @@ function groupByKey(list, key) {
 }
 
 async function run() {
+  // Used for the filename
   const currentDate = new Date().toISOString().slice(0, 19)
 
   let relevantCommits = []
 
   if (argv.useListCommitsAPI) {
+    // Necessary for > 250 commits between two points in time
+
     const startCommit = await octokit.repos.getCommit({
       owner: argv.owner,
       repo: argv.repo,
@@ -81,6 +85,7 @@ async function run() {
       ref: argv.head,
     })
 
+    // Getting the dates is sometimes a bit inaccurate, maybe find a better solution?
     const startDate = getDate(startCommit)
     const endDate = getDate(endCommit)
 
@@ -105,6 +110,14 @@ async function run() {
     relevantCommits = res.data.commits
   }
 
+  if (relevantCommits.length === 0) {
+    throw new Error('Couldn\'t find any relevant commits. Are you sure you used the correact head & base, and your excludes are correct?')
+  }
+
+  // Some regex, yey
+  // /(.*)\(# means: Get everything before the first (# and put it into a group
+  // ([0-9]+)\) means: Get every number until the next ) and put it into a group
+  // So first group is message, second is number
   const prRegex = /(.*)\(#([0-9]+)\)/
 
   const entries = relevantCommits.map((c) => {
@@ -146,7 +159,7 @@ async function run() {
           return ''
         }
 
-        const prLink = a.prNumber ? `[PR #${a.prNumber}](https://github.com/gatsbyjs/gatsby/pull/${a.prNumber})` : ''
+        const prLink = a.prNumber ? `[PR #${a.prNumber}](https://github.com/${argv.owner}/${argv.repo}/pull/${a.prNumber})` : ''
 
         return (
           `  - ${a.message} ${prLink}
@@ -166,7 +179,7 @@ ${authorEntries}`
         return
       }
       const authorMD = authorUrl ? `[${authorName}](${authorUrl})` : authorName
-      const prLink = content.prNumber ? `[PR #${content.prNumber}](https://github.com/gatsbyjs/gatsby/pull/${content.prNumber})` : ''
+      const prLink = content.prNumber ? `[PR #${content.prNumber}](https://github.com/${argv.owner}/${argv.repo}/pull/${content.prNumber})` : ''
 
       text += `
 - ${authorMD}: ${content.message} ${prLink}`

@@ -1,6 +1,6 @@
 {
   "name": "thanks-contributors",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "This little script accesses GitHub's API to get all contributors and their PRs between two distinct points in the history of commits. This is helpful for changelogs where you'd want to list all contributions for that release (so e.g. changes between v1 and v1.1).",
   "main": "index.js",
   "bin": "cli.js",
@@ -23,6 +23,13 @@
     "list of PRs"
   ],
   "author": "LekoArts <hello@lekoarts.de>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LekoArts/thanks-contributors"
+  },
+  "bugs": {
+    "url": "https://github.com/LekoArts/thanks-contributors/issues"
+  },
   "license": "MIT",
   "dependencies": {
     "@octokit/rest": "^18.0.12",

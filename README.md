@@ -34,7 +34,7 @@ Optionen:
 
 You must have an environment variable called `GITHUB_ACCESS_TOKEN` either exported in your CLI or defined inside an `.env` file in the root of the project.
 
-The script automatically excludes the members of the organization ("owner" in this case). If you want to exclude specific users, you'll need to edit the `index.js` (at the moment, PRs are welcome).
+The script automatically excludes the members of the organization ("owner" in this case). If you want to exclude specific users, you'll need to edit the `index.js` (at the moment).
 
 The results are stored inside a `./output` folder.
 
@@ -54,6 +54,8 @@ It'll create a markdown list, grouped by user login. If a person had more than o
   - Update something [PR #2](https://github.com/foobar/pull/2)
   - Update something more [PR #3](https://github.com/foobar/pull/3)
 ```
+
+If the url can't be found only the name will be printed.
 
 ## Caveats
 
