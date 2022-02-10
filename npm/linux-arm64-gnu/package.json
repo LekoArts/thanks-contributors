@@ -1,6 +1,6 @@
 {
   "name": "@lekoarts/thanks-contributors-linux-arm64-gnu",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "os": [
     "linux"
   ],
