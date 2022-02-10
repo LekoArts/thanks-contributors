@@ -1,0 +1,18 @@
+{
+  "name": "@lekoarts/thanks-contributors-linux-arm-gnueabihf",
+  "version": "2.0.0",
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "arm"
+  ],
+  "main": "thanks-contributors.linux-arm-gnueabihf.node",
+  "files": [
+    "thanks-contributors.linux-arm-gnueabihf.node"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">= 10"
+  }
+}
