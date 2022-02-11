@@ -9,4 +9,4 @@ export class ExternalObject<T> {
     [K: symbol]: T
   }
 }
-export function run(a: number, b: number): number
+export function run(): Promise<void>

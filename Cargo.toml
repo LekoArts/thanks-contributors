@@ -9,14 +9,13 @@ crate-type = ["cdylib"]
 
 [dependencies]
 clap = "3.0.14"
-color-eyre = "0.6.0"
+dotenv = "0.15.0"
 # Default enable napi4 feature, see https://nodejs.org/api/n-api.html#node-api-version-matrix
-napi = { version = "2.0.4", default-features = false, features = ["napi4"] }
+napi = { version = "2.1.0", default-features = false, features = ["napi8", "tokio_rt", "serde_json", "async"] }
 napi-derive = "2.0.8"
-reqwest = "0.11.9"
-serde = "1.0.136"
+reqwest = { version = "0.11.9", features = ["json"] }
+serde = { version = "1.0.136", features = ["derive"] }
 serde_json = "1.0.78"
-tokio = "1.16.1"
 
 [build-dependencies]
 napi-build = "1.2.1"

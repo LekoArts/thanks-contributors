@@ -120,3 +120,6 @@ dist
 Cargo.lock
 
 *.node
+.env
+.env.*
+!.env.example
