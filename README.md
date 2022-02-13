@@ -13,6 +13,7 @@ base..head`), then parses their authors and creates a markdown list of each
 contributor and their contribution. By default it excludes the members of the
 (owner) organization. Saves the result into an "output" folder.
 
+```shell
 Positionals:
   base                                                                  [string]
   head                                                                  [string]
