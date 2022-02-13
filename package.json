@@ -2,7 +2,7 @@
   "name": "@lekoarts/thanks-contributors",
   "version": "1.0.0",
   "main": "index.js",
-  "bin": "cli.js",
+  "bin": "bin.js",
   "description": "This little script accesses GitHub's API to get all contributors and their PRs between two distinct points in the history of commits. This is helpful for changelogs where you'd want to list all contributions for that release (so e.g. changes between v1 and v1.1).",
   "types": "index.d.ts",
   "napi": {
@@ -17,12 +17,17 @@
       ]
     }
   },
+  "files": [
+    "bin.js",
+    "index.js",
+    "index.d.ts"
+  ],
   "license": "MIT",
   "devDependencies": {
     "@napi-rs/cli": "^2.4.2"
   },
   "engines": {
-    "node": ">= 10"
+    "node": ">= 14"
   },
   "scripts": {
     "napi": "napi",

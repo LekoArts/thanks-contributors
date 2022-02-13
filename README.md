@@ -6,9 +6,10 @@ This little script accesses GitHub's API to get all contributors and their PRs b
 
 ```shell
 npx thanks-contributors <base> <head> [owner] [repo]
+```
 
-First it get's the list of commits between base...head (equivalent to git log
-base..head), then parses their authors out and creates a markdown list of each
+First it get's the list of commits between `base...head` (equivalent to `git log
+base..head`), then parses their authors and creates a markdown list of each
 contributor and their contribution. By default it excludes the members of the
 (owner) organization. Saves the result into an "output" folder.
 
