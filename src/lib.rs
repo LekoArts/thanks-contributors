@@ -7,6 +7,7 @@ use crate::error::ThxContribError;
 use clap::{AppSettings, FromArgMatches, IntoApp, Parser};
 use dotenv::dotenv;
 use napi::bindgen_prelude::*;
+use reqwest::header::{AUTHORIZATION, USER_AGENT};
 use std::env;
 
 mod error;
@@ -33,6 +34,8 @@ struct Cli {
   repo: String,
 }
 
+const ENV_VAR_NAME: &str = "GITHUB_ACCESS_TOKEN";
+
 #[napi]
 async fn run(args: Vec<String>) -> Result<()> {
   dotenv().ok();
@@ -40,14 +43,24 @@ async fn run(args: Vec<String>) -> Result<()> {
   let matches = app.get_matches_from(args);
   let cli = Cli::from_arg_matches(&matches).map_err(|e| ThxContribError::cli_error::<Cli>(e))?;
 
-  let env_var_name = "GITHUB_ACCESS_TOKEN";
-  let gh_token = env::var(env_var_name).map_err(|e| ThxContribError::from(e))?;
+  let gh_token = env::var(ENV_VAR_NAME).map_err(|e| ThxContribError::from(e))?;
 
-  println!(
-    "base: {:?} - head: {:?} - owner: {:?} - repo: {:?}",
-    cli.base, cli.head, cli.owner, cli.repo
-  );
-  println!("token: {}", gh_token);
+  let client = reqwest::Client::new();
+
+  let response = client
+    .get(
+      "https://api.github.com/repos/gatsbyjs/gatsby/compare/master...memoize-cache-date-formatting",
+    )
+    .header(USER_AGENT, "thanks-contributors")
+    .header(AUTHORIZATION, format!("token {}", gh_token))
+    .send()
+    .await
+    .map_err(|e| ThxContribError::reqwest_error(e))?
+    .json::<serde_json::Value>()
+    .await
+    .map_err(|e| ThxContribError::reqwest_error(e))?;
+
+  dbg!(response);
 
   Ok(())
 }
