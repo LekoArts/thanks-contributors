@@ -3,11 +3,13 @@
 #[macro_use]
 extern crate napi_derive;
 
+use crate::error::ThxContribError;
 use clap::{AppSettings, FromArgMatches, IntoApp, Parser};
 use dotenv::dotenv;
 use napi::bindgen_prelude::*;
-use reqwest::header::CONTENT_TYPE;
 use std::env;
+
+mod error;
 
 #[derive(Parser)]
 #[clap(
@@ -31,24 +33,15 @@ struct Cli {
   repo: String,
 }
 
-fn format_cli_error<I: IntoApp>(err: clap::Error) -> clap::Error {
-  let mut app = I::into_app();
-  err.format(&mut app)
-}
-
 #[napi]
 async fn run(args: Vec<String>) -> Result<()> {
   dotenv().ok();
   let app = Cli::into_app();
   let matches = app.get_matches_from(args);
-  let res = Cli::from_arg_matches(&matches).map_err(format_cli_error::<Cli>);
-  let cli = match res {
-    Ok(s) => s,
-    Err(e) => e.exit(),
-  };
+  let cli = Cli::from_arg_matches(&matches).map_err(|e| ThxContribError::cli_error::<Cli>(e))?;
 
   let env_var_name = "GITHUB_ACCESS_TOKEN";
-  let gh_token = env::var(env_var_name)?;
+  let gh_token = env::var(env_var_name).map_err(|e| ThxContribError::from(e))?;
 
   println!(
     "base: {:?} - head: {:?} - owner: {:?} - repo: {:?}",
