@@ -48,18 +48,13 @@ async fn run(args: Vec<String>) -> Result<()> {
   };
 
   let env_var_name = "GITHUB_ACCESS_TOKEN";
-  let gh_token = match env::var(env_var_name) {
-    Ok(token) => Ok(token),
-    Err(e) => Err(Error::new(
-      Status::GenericFailure,
-      format!("{} is not set ({})", env_var_name, e),
-    )),
-  };
+  let gh_token = env::var(env_var_name)?;
 
   println!(
     "base: {:?} - head: {:?} - owner: {:?} - repo: {:?}",
     cli.base, cli.head, cli.owner, cli.repo
   );
+  println!("token: {}", gh_token);
 
   Ok(())
 }
