@@ -3,14 +3,92 @@
 #[macro_use]
 extern crate napi_derive;
 
+use crate::api::{compareCommits, listMembers};
 use crate::error::ThxContribError;
 use clap::{AppSettings, FromArgMatches, IntoApp, Parser};
 use dotenv::dotenv;
-use napi::bindgen_prelude::*;
-use reqwest::header::{AUTHORIZATION, USER_AGENT};
+use napi::bindgen_prelude::{Error as NapiError, Result, Status};
+use regex::Regex;
 use std::env;
 
+mod api;
 mod error;
+
+#[napi]
+async fn run(args: Vec<String>) -> Result<()> {
+  let default_excludes = vec!["renovate[bot]".to_string(), "renovate-bot".into()];
+  dotenv().ok();
+  let app = Cli::into_app();
+  let matches = app.get_matches_from(args);
+  let cli = Cli::from_arg_matches(&matches).map_err(|e| ThxContribError::cli_error::<Cli>(e))?;
+  let should_include_org_members = match cli.include {
+    Some(v) => v,
+    None => false,
+  };
+
+  let gh_token = env::var("GITHUB_ACCESS_TOKEN").map_err(|e| ThxContribError::from(e))?;
+
+  let compare_commits = compareCommits(&cli.owner, cli.repo, cli.base, cli.head, &gh_token).await?;
+  let org_members = listMembers(&cli.owner, &gh_token).await?;
+
+  if compare_commits.commits.is_empty() {
+    return Err(NapiError::new(
+      Status::InvalidArg,
+      "Couldn't find any relevant commits. Are you sure you used the correct head & base?"
+        .to_owned(),
+    ));
+  }
+
+  let pr_regex = Regex::new(r"(.*)\(#([0-9]+)\)").unwrap();
+
+  let entries: Vec<Entry> = compare_commits
+    .commits
+    .into_iter()
+    .map(|c| {
+      let first_line = c.commit.message.lines().next().map_or("", |f| f);
+
+      let msg_and_pr = match pr_regex.captures(first_line) {
+        Some(caps) => {
+          let msg = caps
+            .get(1)
+            .map_or(None, |m| Some(m.as_str().trim_end().to_string()));
+          let pr = caps.get(2).map_or(None, |m| Some(m.as_str().to_string()));
+          (msg, pr)
+        }
+        None => (None, None),
+      };
+
+      let author = match &c.author {
+        Some(author) => author.login.to_owned(),
+        None => c.commit.author.name,
+      };
+      let author_url = match &c.author {
+        Some(author) => Some(author.html_url.to_owned()),
+        None => None,
+      };
+
+      Entry {
+        author,
+        author_url,
+        message: msg_and_pr.0,
+        pr_number: msg_and_pr.1,
+      }
+    })
+    .filter(|i| {
+      if should_include_org_members {
+        true
+      } else {
+        let excludes: Vec<&String> = default_excludes.iter().chain(&org_members).collect();
+        dbg!(excludes);
+        false
+      }
+    })
+    .collect();
+
+  dbg!(org_members);
+
+  Ok(())
+}
 
 #[derive(Parser)]
 #[clap(
@@ -32,35 +110,15 @@ struct Cli {
   /// Name of the repository
   #[clap(default_value = "gatsby")]
   repo: String,
+  /// Whether to include organization members into the list or not
+  #[clap(short, long)]
+  include: Option<bool>,
 }
 
-const ENV_VAR_NAME: &str = "GITHUB_ACCESS_TOKEN";
-
-#[napi]
-async fn run(args: Vec<String>) -> Result<()> {
-  dotenv().ok();
-  let app = Cli::into_app();
-  let matches = app.get_matches_from(args);
-  let cli = Cli::from_arg_matches(&matches).map_err(|e| ThxContribError::cli_error::<Cli>(e))?;
-
-  let gh_token = env::var(ENV_VAR_NAME).map_err(|e| ThxContribError::from(e))?;
-
-  let client = reqwest::Client::new();
-
-  let response = client
-    .get(
-      "https://api.github.com/repos/gatsbyjs/gatsby/compare/master...memoize-cache-date-formatting",
-    )
-    .header(USER_AGENT, "thanks-contributors")
-    .header(AUTHORIZATION, format!("token {}", gh_token))
-    .send()
-    .await
-    .map_err(|e| ThxContribError::reqwest_error(e))?
-    .json::<serde_json::Value>()
-    .await
-    .map_err(|e| ThxContribError::reqwest_error(e))?;
-
-  dbg!(response);
-
-  Ok(())
+#[derive(Debug)]
+struct Entry {
+  author: String,
+  author_url: Option<String>,
+  message: Option<String>,
+  pr_number: Option<String>,
 }

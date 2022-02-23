@@ -5,17 +5,17 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum ThxContribError {
-  #[error("failed to parse response body")]
+  #[error("failed to parse response body: {0}")]
   Deserialize(#[source] ReqwestError),
   #[error("token has incorrect permissions")]
   InvalidPermissions,
-  #[error("failed to serialize request body")]
+  #[error("failed to serialize request body: {0}")]
   Serialize(#[source] ReqwestError),
   #[error("unexpected status code {code}")]
   Status { code: u16, source: ReqwestError },
-  #[error("request timed out")]
+  #[error("request timed out: {0}")]
   Timeout(#[source] ReqwestError),
-  #[error("an unknown error occurred while sending the request")]
+  #[error("an unknown error occurred while sending the request: {0}")]
   Unknown(#[source] ReqwestError),
   #[error("{reason}")]
   ClapError {
@@ -55,7 +55,6 @@ impl ThxContribError {
         source: err,
       }
     } else if err.is_decode() {
-      dbg!(&err);
       ThxContribError::Deserialize(err)
     } else if err.is_body() {
       ThxContribError::Serialize(err)
