@@ -3,9 +3,9 @@
 #[macro_use]
 extern crate napi_derive;
 
-use crate::api::{compareCommits, listMembers};
+use crate::api::{compare_commits, list_members};
 use crate::error::ThxContribError;
-use clap::{AppSettings, FromArgMatches, IntoApp, Parser};
+use clap::{FromArgMatches, IntoApp, Parser};
 use dotenv::dotenv;
 use napi::bindgen_prelude::{Error as NapiError, Result, Status};
 use regex::Regex;
@@ -16,22 +16,27 @@ mod error;
 
 #[napi]
 async fn run(args: Vec<String>) -> Result<()> {
-  let default_excludes = vec!["renovate[bot]".to_string(), "renovate-bot".into()];
   dotenv().ok();
-  let app = Cli::into_app();
+  let app = Cli::command();
   let matches = app.get_matches_from(args);
   let cli = Cli::from_arg_matches(&matches).map_err(|e| ThxContribError::cli_error::<Cli>(e))?;
-  let should_include_org_members = match cli.include {
+  let should_include_org_members = match cli.include_org_members {
     Some(v) => v,
     None => false,
   };
+  let parsed_excludes = match cli.excludes {
+    Some(e) => e,
+    None => vec!["renovate[bot]".to_string(), "renovate-bot".into()],
+  };
+
+  dbg!(&parsed_excludes);
 
   let gh_token = env::var("GITHUB_ACCESS_TOKEN").map_err(|e| ThxContribError::from(e))?;
 
-  let compare_commits = compareCommits(&cli.owner, cli.repo, cli.base, cli.head, &gh_token).await?;
-  let org_members = listMembers(&cli.owner, &gh_token).await?;
+  let commits = compare_commits(&cli.owner, cli.repo, cli.base, cli.head, &gh_token).await?;
+  let org_members = list_members(&cli.owner, &gh_token).await?;
 
-  if compare_commits.commits.is_empty() {
+  if commits.commits.is_empty() {
     return Err(NapiError::new(
       Status::InvalidArg,
       "Couldn't find any relevant commits. Are you sure you used the correct head & base?"
@@ -41,7 +46,7 @@ async fn run(args: Vec<String>) -> Result<()> {
 
   let pr_regex = Regex::new(r"(.*)\(#([0-9]+)\)").unwrap();
 
-  let entries: Vec<Entry> = compare_commits
+  let entries: Vec<Entry> = commits
     .commits
     .into_iter()
     .map(|c| {
@@ -78,7 +83,7 @@ async fn run(args: Vec<String>) -> Result<()> {
       if should_include_org_members {
         true
       } else {
-        let excludes: Vec<&String> = default_excludes.iter().chain(&org_members).collect();
+        let excludes: Vec<&String> = parsed_excludes.iter().chain(&org_members).collect();
         dbg!(excludes);
         false
       }
@@ -96,7 +101,7 @@ async fn run(args: Vec<String>) -> Result<()> {
   name = "@lekoarts/thanks-contributors",
   about = "This little script accesses GitHub's API to get all contributors and their PRs between two distinct points in the history of commits. This is helpful for changelogs where you'd want to list all contributions for that release (so e.g. changes between v1 and v1.1)."
 )]
-#[clap(global_setting(AppSettings::NoBinaryName))]
+#[clap(no_binary_name = true)]
 struct Cli {
   /// Pointer from where to start looking for changes
   #[clap(required = true)]
@@ -110,9 +115,19 @@ struct Cli {
   /// Name of the repository
   #[clap(default_value = "gatsby")]
   repo: String,
-  /// Whether to include organization members into the list or not
+  /// Whether to include organization members into the list or not [default: false]
   #[clap(short, long)]
-  include: Option<bool>,
+  include_org_members: Option<bool>,
+  /// List of members to exclude from the list. Usage: -e=member1,member2 [default: "renovate-bot", "renovate[bot]"]
+  #[clap(
+    short,
+    long,
+    multiple_values = true,
+    takes_value = true,
+    use_value_delimiter = true,
+    require_value_delimiter = true
+  )]
+  excludes: Option<Vec<String>>,
 }
 
 #[derive(Debug)]

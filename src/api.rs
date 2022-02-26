@@ -3,7 +3,7 @@ use napi::bindgen_prelude::Result;
 use reqwest::header::{AUTHORIZATION, USER_AGENT};
 use serde::Deserialize;
 
-pub async fn compareCommits(
+pub async fn compare_commits(
   owner: &str,
   repo: String,
   base: String,
@@ -28,7 +28,7 @@ pub async fn compareCommits(
   Ok(response)
 }
 
-pub async fn listMembers(owner: &str, gh_token: &str) -> Result<Vec<String>> {
+pub async fn list_members(owner: &str, gh_token: &str) -> Result<Vec<String>> {
   let client = reqwest::Client::new();
   let response = client
     .get(format!(
