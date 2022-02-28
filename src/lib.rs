@@ -8,6 +8,7 @@ use crate::error::ThxContribError;
 use crate::utils::{get_current_date, get_pr_link, group_by_author, Entry};
 use clap::{FromArgMatches, IntoApp, Parser};
 use dotenv::dotenv;
+use log::*;
 use napi::bindgen_prelude::{Error as NapiError, Result, Status};
 use regex::Regex;
 use std::env;
@@ -21,6 +22,11 @@ mod utils;
 async fn run(args: Vec<String>) -> Result<()> {
   dotenv().ok();
   let app = Cli::command();
+  stderrlog::new()
+    .module(module_path!())
+    .verbosity(2)
+    .init()
+    .unwrap();
   // Arguments are coming from bin.js
   let matches = app.get_matches_from(args);
   let cli = Cli::from_arg_matches(&matches).map_err(ThxContribError::cli_error::<Cli>)?;
@@ -32,10 +38,15 @@ async fn run(args: Vec<String>) -> Result<()> {
     None => vec!["renovate[bot]".to_string(), "renovate-bot".into()],
   };
 
+  debug!("Parsed Excludes: {:#?}", parsed_excludes);
+
   let gh_token = env::var("GITHUB_ACCESS_TOKEN").map_err(ThxContribError::from)?;
 
   let commits = compare_commits(&cli.owner, &cli.repo, cli.base, cli.head, &gh_token).await?;
   let org_members = list_members(&cli.owner, &gh_token).await?;
+
+  debug!("Commits: {:#?}", commits);
+  debug!("Org members: {:#?}", org_members);
 
   if commits.commits.is_empty() {
     return Err(NapiError::new(
@@ -44,6 +55,8 @@ async fn run(args: Vec<String>) -> Result<()> {
         .to_owned(),
     ));
   }
+
+  info!("Fetched {} commits", commits.commits.len(),);
 
   // Regex is not dynamic so .unwrap is fine
   let pr_regex = Regex::new(r"(.*)\(#([0-9]+)\)").unwrap();
@@ -88,6 +101,8 @@ async fn run(args: Vec<String>) -> Result<()> {
       }
     })
     .collect();
+
+  info!("Process {} filtered commits", entries.len());
 
   let groups = group_by_author(entries);
 
@@ -137,7 +152,9 @@ async fn run(args: Vec<String>) -> Result<()> {
   let filepath = directory_path.join(format!("{}.md", get_current_date()));
 
   fs::create_dir_all(directory_path).unwrap();
-  fs::write(filepath, output).unwrap();
+  fs::write(&filepath, output).unwrap();
+
+  info!("Successfully created {}", &filepath.display());
 
   Ok(())
 }
@@ -162,7 +179,7 @@ struct Cli {
   /// Name of the repository
   #[clap(default_value = "gatsby")]
   repo: String,
-  /// Whether to include organization members into the list or not [default: false]
+  /// Include organization members into the list [default: false]
   #[clap(short, long)]
   include_org_members: Option<bool>,
   /// List of members to exclude from the list. Usage: -e=member1,member2 [default: "renovate-bot", "renovate[bot]"]

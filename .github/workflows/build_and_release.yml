@@ -1,4 +1,4 @@
-name: CI
+name: Build & Release
 env:
   DEBUG: napi:*
   APP_NAME: thanks-contributors

@@ -5,45 +5,45 @@ This little script accesses GitHub's API to get all contributors and their PRs b
 ## Usage
 
 ```shell
-npx thanks-contributors <base> <head> [owner] [repo]
+npx @lekoarts/thanks-contributors <BASE> <HEAD> [<OWNER>] [<REPO>] [OPTIONS]
 ```
 
-First it get's the list of commits between `base...head` (equivalent to `git log
+First, it get's the list of commits between `base...head` (equivalent to `git log
 base..head`), then parses their authors and creates a markdown list of each
-contributor and their contribution. By default it excludes the members of the
-(owner) organization. Saves the result into an "output" folder.
+contributor and their contribution.
 
 ```shell
-Positionals:
-  base                                                                  [string]
-  head                                                                  [string]
-  owner                                          [string] [Standard: "gatsbyjs"]
-  repo                                             [string] [Standard: "gatsby"]
+USAGE:
+    npx @lekoarts/thanks-contributors <BASE> <HEAD> [<OWNER>] [<REPO>] [OPTIONS]
 
-Optionen:
-      --version            Show version                                [boolean]
-  -h, --help               Show help                                   [boolean]
-  -l, --useListCommitsAPI  Use the "List commits" API
-                           (https://docs.github.com/en/free-pro-team@latest/rest
-                           /reference/repos#list-commits) instead of the
-                           "Compare two commits" API
-                           (https://docs.github.com/en/free-pro-team@latest/rest
-                           /reference/repos#compare-two-commits)
-                                                     [boolean] [Standard: false]
-  -i, --include            Whether to include organization members from the list
-                           or not                    [boolean] [Standard: false]
+ARGS:
+    <BASE>     Pointer from where to start looking for changes
+    <HEAD>     Pointer until where to stop looking for changes
+    <OWNER>    Name of the owner/user/organization of the repository [default: gatsbyjs]
+    <REPO>     Name of the repository [default: gatsby]
+
+OPTIONS:
+    -e, --excludes <EXCLUDES>...
+            List of members to exclude from the list. Usage: -e=member1,member2 [default: "renovate-
+            bot", "renovate[bot]"]
+
+    -h, --help
+            Print help information
+
+    -i, --include-org-members <INCLUDE_ORG_MEMBERS>
+            Include organization members into the list [default: false]
 ```
 
 You must have an environment variable called `GITHUB_ACCESS_TOKEN` either exported in your CLI or defined inside an `.env` file in the root of the project.
 
-The script automatically excludes the members of the organization ("owner" in this case). If you want to exclude specific users, you'll need to edit the `index.js` (at the moment).
+The script automatically excludes the members of the organization ("owner" in this case). If you want to exclude specific users, you'll need to provide the `--excludes` flag.
 
-The results are stored inside a `./output` folder.
+The results are stored inside a `output` folder in the current directory.
 
 ### Example
 
 ```shell
-npx thanks-contributors gatsby@2.29.0-next.0 gatsby@2.29.0 gatsbyjs gatsby
+npx thanks-contributors gatsby@4.8.0-next.0 gatsby@4.8.0 gatsbyjs gatsby
 ```
 
 ## Resulting output
