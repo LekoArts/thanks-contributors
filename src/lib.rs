@@ -23,19 +23,16 @@ async fn run(args: Vec<String>) -> Result<()> {
   let app = Cli::command();
   // Arguments are coming from bin.js
   let matches = app.get_matches_from(args);
-  let cli = Cli::from_arg_matches(&matches).map_err(|e| ThxContribError::cli_error::<Cli>(e))?;
+  let cli = Cli::from_arg_matches(&matches).map_err(ThxContribError::cli_error::<Cli>)?;
   // By default, don't include org members
-  let should_include_org_members = match cli.include_org_members {
-    Some(v) => v,
-    None => false,
-  };
+  let should_include_org_members = cli.include_org_members.unwrap_or(false);
   // By default, exclude renovate bot
   let parsed_excludes = match cli.excludes {
     Some(e) => e,
     None => vec!["renovate[bot]".to_string(), "renovate-bot".into()],
   };
 
-  let gh_token = env::var("GITHUB_ACCESS_TOKEN").map_err(|e| ThxContribError::from(e))?;
+  let gh_token = env::var("GITHUB_ACCESS_TOKEN").map_err(ThxContribError::from)?;
 
   let commits = compare_commits(&cli.owner, &cli.repo, cli.base, cli.head, &gh_token).await?;
   let org_members = list_members(&cli.owner, &gh_token).await?;
@@ -59,10 +56,8 @@ async fn run(args: Vec<String>) -> Result<()> {
 
       let msg_and_pr = match pr_regex.captures(first_line) {
         Some(caps) => {
-          let msg = caps
-            .get(1)
-            .map_or(None, |m| Some(m.as_str().trim_end().to_string()));
-          let pr = caps.get(2).map_or(None, |m| Some(m.as_str().to_string()));
+          let msg = caps.get(1).map(|m| m.as_str().trim_end().to_string());
+          let pr = caps.get(2).map(|m| m.as_str().to_string());
           (msg, pr)
         }
         None => (None, None),
@@ -72,10 +67,7 @@ async fn run(args: Vec<String>) -> Result<()> {
         Some(author) => author.login.to_owned(),
         None => c.commit.author.name,
       };
-      let author_url = match &c.author {
-        Some(author) => Some(author.html_url.to_owned()),
-        None => None,
-      };
+      let author_url = c.author.as_ref().map(|author| author.html_url.to_owned());
 
       Entry {
         author,
@@ -89,8 +81,10 @@ async fn run(args: Vec<String>) -> Result<()> {
         true
       } else {
         // Exclude members from the final list of entries
-        let excludes: Vec<&String> = parsed_excludes.iter().chain(&org_members).collect();
-        !excludes.contains(&&i.author)
+        !parsed_excludes
+          .iter()
+          .chain(&org_members)
+          .any(|x| x == &i.author)
       }
     })
     .collect();

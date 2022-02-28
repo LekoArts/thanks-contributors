@@ -20,10 +20,10 @@ pub async fn compare_commits(
     .header(AUTHORIZATION, format!("token {}", gh_token))
     .send()
     .await
-    .map_err(|e| ThxContribError::reqwest_error(e))?
+    .map_err(ThxContribError::reqwest_error)?
     .json::<CompareCommitsResponse>()
     .await
-    .map_err(|e| ThxContribError::reqwest_error(e))?;
+    .map_err(ThxContribError::reqwest_error)?;
 
   Ok(response)
 }
@@ -39,10 +39,10 @@ pub async fn list_members(owner: &str, gh_token: &str) -> Result<Vec<String>> {
     .header(AUTHORIZATION, format!("token {}", gh_token))
     .send()
     .await
-    .map_err(|e| ThxContribError::reqwest_error(e))?
+    .map_err(ThxContribError::reqwest_error)?
     .json::<Vec<Member>>()
     .await
-    .map_err(|e| ThxContribError::reqwest_error(e))?;
+    .map_err(ThxContribError::reqwest_error)?;
 
   let list_of_logins: Vec<String> = response.into_iter().map(|m| m.login).collect();
 

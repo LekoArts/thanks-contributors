@@ -13,7 +13,7 @@ pub fn group_by_author(input: Vec<Entry>) -> HashMap<String, Vec<Entry>> {
   let mut groups: HashMap<String, Vec<Entry>> = HashMap::new();
 
   input.into_iter().for_each(|entry| {
-    let group = groups.entry(entry.author.clone()).or_insert(vec![]);
+    let group = groups.entry(entry.author.clone()).or_insert_with(Vec::new);
     group.push(entry);
   });
 
