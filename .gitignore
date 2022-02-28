@@ -123,3 +123,4 @@ Cargo.lock
 .env
 .env.*
 !.env.example
+output

@@ -8,6 +8,7 @@ version = "0.0.0"
 crate-type = ["cdylib"]
 
 [dependencies]
+chrono = "0.4.19"
 clap = { version = "3.1.2", features = ["derive"] }
 dotenv = "0.15.0"
 napi = { version = "2.1.0", features = ["napi8", "serde_json", "async"] }

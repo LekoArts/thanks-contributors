@@ -5,35 +5,39 @@ extern crate napi_derive;
 
 use crate::api::{compare_commits, list_members};
 use crate::error::ThxContribError;
+use crate::utils::{get_current_date, get_pr_link, group_by_author, Entry};
 use clap::{FromArgMatches, IntoApp, Parser};
 use dotenv::dotenv;
 use napi::bindgen_prelude::{Error as NapiError, Result, Status};
 use regex::Regex;
 use std::env;
+use std::fs;
 
 mod api;
 mod error;
+mod utils;
 
 #[napi]
 async fn run(args: Vec<String>) -> Result<()> {
   dotenv().ok();
   let app = Cli::command();
+  // Arguments are coming from bin.js
   let matches = app.get_matches_from(args);
   let cli = Cli::from_arg_matches(&matches).map_err(|e| ThxContribError::cli_error::<Cli>(e))?;
+  // By default, don't include org members
   let should_include_org_members = match cli.include_org_members {
     Some(v) => v,
     None => false,
   };
+  // By default, exclude renovate bot
   let parsed_excludes = match cli.excludes {
     Some(e) => e,
     None => vec!["renovate[bot]".to_string(), "renovate-bot".into()],
   };
 
-  dbg!(&parsed_excludes);
-
   let gh_token = env::var("GITHUB_ACCESS_TOKEN").map_err(|e| ThxContribError::from(e))?;
 
-  let commits = compare_commits(&cli.owner, cli.repo, cli.base, cli.head, &gh_token).await?;
+  let commits = compare_commits(&cli.owner, &cli.repo, cli.base, cli.head, &gh_token).await?;
   let org_members = list_members(&cli.owner, &gh_token).await?;
 
   if commits.commits.is_empty() {
@@ -44,6 +48,7 @@ async fn run(args: Vec<String>) -> Result<()> {
     ));
   }
 
+  // Regex is not dynamic so .unwrap is fine
   let pr_regex = Regex::new(r"(.*)\(#([0-9]+)\)").unwrap();
 
   let entries: Vec<Entry> = commits
@@ -83,14 +88,62 @@ async fn run(args: Vec<String>) -> Result<()> {
       if should_include_org_members {
         true
       } else {
+        // Exclude members from the final list of entries
         let excludes: Vec<&String> = parsed_excludes.iter().chain(&org_members).collect();
-        dbg!(excludes);
-        false
+        !excludes.contains(&&i.author)
       }
     })
     .collect();
 
-  dbg!(org_members);
+  let groups = group_by_author(entries);
+
+  let mut output = String::new();
+
+  for (author_name, author_entries) in groups {
+    let md_author = match &author_entries[0].author_url {
+      Some(url) => format!("[{}]({})", author_name, url),
+      None => author_name,
+    };
+
+    if author_entries.len() > 1 {
+      let mut md_author_list = String::new();
+      for entry in author_entries {
+        match &entry.message {
+          Some(msg) => {
+            let line = format!(
+              "  - {}{}\n",
+              msg,
+              get_pr_link(&entry, &cli.owner, &cli.repo)
+            );
+            md_author_list.push_str(&line)
+          }
+          None => md_author_list.push_str(""),
+        }
+      }
+
+      let text = format!("- {}\n{}", md_author, md_author_list);
+
+      output.push_str(&text);
+    } else {
+      let pr_link = get_pr_link(&author_entries[0], &cli.owner, &cli.repo);
+
+      let text = match &author_entries[0].message {
+        Some(msg) => format!("- {}: {}{}\n", md_author, msg, pr_link),
+        None => format!(
+          "- {}: No message could be generated{}\n",
+          md_author, pr_link
+        ),
+      };
+      output.push_str(&text);
+    }
+  }
+
+  let current_dir = env::current_dir()?;
+  let directory_path = current_dir.join("output");
+  let filepath = directory_path.join(format!("{}.md", get_current_date()));
+
+  fs::create_dir_all(directory_path).unwrap();
+  fs::write(filepath, output).unwrap();
 
   Ok(())
 }
@@ -128,12 +181,4 @@ struct Cli {
     require_value_delimiter = true
   )]
   excludes: Option<Vec<String>>,
-}
-
-#[derive(Debug)]
-struct Entry {
-  author: String,
-  author_url: Option<String>,
-  message: Option<String>,
-  pr_number: Option<String>,
 }

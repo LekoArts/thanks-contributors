@@ -62,13 +62,12 @@ If the url can't be found only the name will be printed.
 ## Caveats
 
 - Getting the PR number only works if you consistently add the number in the commit itself, e.g. in `feat: My cool feature (#123)`. This automatically happens in GitHub's UI if you use squash commits.
-- The `excludes` currently can't be defined manually via the CLI
 
 ## Development
 
 ### Build
 
-After `yarn build/npm run build` command, you can see `package-template.[darwin|win32|linux].node` file in project root. This is the native addon built from [lib.rs](./src/lib.rs).
+After `yarn build/npm run build` command, you can see `thanks-contributors.[darwin|win32|linux].node` file in project root. This is the native addon built from [lib.rs](./src/lib.rs).
 
 ### CI
 
@@ -84,7 +83,7 @@ The other problem is how to deliver prebuild `binary` to users. Download it in `
 
 In this package we choose a better way to solve this problem. We release different `npm packages` for different platform. And add it to `optionalDependencies` before release the `Major` package to npm.
 
-`NPM` will choose which native package should download from `registry` automatically. You can see [npm](./npm) dir for details. And you can also run `yarn add @napi-rs/package-template` to see how it works.
+`NPM` will choose which native package should download from `registry` automatically. You can see [npm](./npm) dir for details. And you can also run `yarn add @napi-rs/thanks-contributors` to see how it works.
 
 ### Develop requirements
 
@@ -94,8 +93,9 @@ In this package we choose a better way to solve this problem. We release differe
 
 ### Test in local
 
-- yarn
-- yarn build
+- `yarn`
+- `yarn build:debug`
+- `node bin.js --help`
 
 ### Release package
 

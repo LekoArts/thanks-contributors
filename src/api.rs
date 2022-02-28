@@ -5,7 +5,7 @@ use serde::Deserialize;
 
 pub async fn compare_commits(
   owner: &str,
-  repo: String,
+  repo: &str,
   base: String,
   head: String,
   gh_token: &str,
