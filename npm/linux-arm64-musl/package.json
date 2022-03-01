@@ -1,0 +1,18 @@
+{
+  "name": "@lekoarts/thanks-contributors-linux-arm64-musl",
+  "version": "1.0.0",
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "arm64"
+  ],
+  "main": "thanks-contributors.linux-arm64-musl.node",
+  "files": [
+    "thanks-contributors.linux-arm64-musl.node"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">= 10"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "name": "@lekoarts/thanks-contributors-darwin-arm64",
+  "version": "1.0.0",
+  "os": [
+    "darwin"
+  ],
+  "cpu": [
+    "arm64"
+  ],
+  "main": "thanks-contributors.darwin-arm64.node",
+  "files": [
+    "thanks-contributors.darwin-arm64.node"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">= 10"
+  }
+}

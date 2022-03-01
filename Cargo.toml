@@ -1,0 +1,28 @@
+[package]
+edition = "2021"
+name = "thanks-contributors"
+description = "This little script accesses GitHub's API to get all contributors and their PRs between two distinct points in the history of commits. This is helpful for changelogs where you'd want to list all contributions for that release (so e.g. changes between v1 and v1.1)."
+version = "0.0.0"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+chrono = "0.4.19"
+clap = { version = "3.1.2", features = ["derive"] }
+dotenv = "0.15.0"
+log = "0.4.14"
+napi = { version = "2.1.0", features = ["napi8", "serde_json", "async"] }
+napi-derive = "2.0.8"
+regex = "1.5.4"
+reqwest = { version = "0.11.9", features = ["json", "native-tls-vendored"] }
+serde = { version = "1.0.136", features = ["derive"] }
+serde_json = "1.0.79"
+stderrlog = "0.5.1"
+thiserror = "1.0.30"
+
+[build-dependencies]
+napi-build = "1.2.1"
+
+[profile.release]
+lto = true

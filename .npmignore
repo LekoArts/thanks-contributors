@@ -1,7 +1,10 @@
-node_modules
-output
-.idea
-.vscode
-.DS_Store
+target
+Cargo.lock
+.cargo
+.github
+npm
+.eslintrc
+.prettierignore
+rustfmt.toml
 yarn.lock
-*.log*
+*.node
