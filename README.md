@@ -43,7 +43,7 @@ The results are stored inside a `output` folder in the current directory.
 ### Example
 
 ```shell
-npx thanks-contributors gatsby@4.8.0-next.0 gatsby@4.8.0 gatsbyjs gatsby
+npx @lekoarts/thanks-contributors gatsby@4.8.0-next.0 gatsby@4.8.0 gatsbyjs gatsby
 ```
 
 ## Resulting output
