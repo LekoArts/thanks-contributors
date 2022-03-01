@@ -71,7 +71,7 @@ After `yarn build/npm run build` command, you can see `thanks-contributors.[darw
 
 ### CI
 
-With GitHub actions, every commits and pull request will be built and tested automatically in [`node@12`, `node@14`, `@node16`] x [`macOS`, `Linux`, `Windows`] matrix. You will never be afraid of the native addon broken in these platforms.
+With GitHub actions, every commits and pull request will be built and tested automatically in [`node@14`, `@node16`] x [`macOS`, `Linux`, `Windows`] matrix. You will never be afraid of the native addon broken in these platforms.
 
 ### Release
 
@@ -88,7 +88,7 @@ In this package we choose a better way to solve this problem. We release differe
 ### Develop requirements
 
 - Install latest `Rust`
-- Install `Node.js@10+` which fully supported `Node-API`
+- Install `Node.js@14+` which fully supported `Node-API`
 - Install `yarn@1.x`
 
 ### Test in local
