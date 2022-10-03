@@ -5,7 +5,7 @@ This little script accesses GitHub's API to get all contributors and their PRs b
 ## Usage
 
 ```shell
-npx @lekoarts/thanks-contributors <BASE> <HEAD> [<OWNER>] [<REPO>] [OPTIONS]
+npx @lekoarts/thanks-contributors [OPTIONS] <BASE> <HEAD> [OWNER] [REPO]
 ```
 
 First, it get's the list of commits between `base...head` (equivalent to `git log
@@ -13,25 +13,37 @@ base..head`), then parses their authors and creates a markdown list of each
 contributor and their contribution.
 
 ```shell
-USAGE:
-    npx @lekoarts/thanks-contributors <BASE> <HEAD> [<OWNER>] [<REPO>] [OPTIONS]
+Usage: @lekoarts/thanks-contributors [OPTIONS] <BASE> <HEAD> [OWNER] [REPO]
 
-ARGS:
-    <BASE>     Pointer from where to start looking for changes
-    <HEAD>     Pointer until where to stop looking for changes
-    <OWNER>    Name of the owner/user/organization of the repository [default: gatsbyjs]
-    <REPO>     Name of the repository [default: gatsby]
+Arguments:
+<BASE>
+        Pointer from where to start looking for changes
 
-OPTIONS:
-    -e, --excludes <EXCLUDES>...
-            List of members to exclude from the list. Usage: -e=member1,member2 [default: "renovate-
-            bot", "renovate[bot]"]
+<HEAD>
+        Pointer until where to stop looking for changes
 
-    -h, --help
-            Print help information
+[OWNER]
+        Name of the owner/user/organization of the repository
+        
+        [default: gatsbyjs]
 
-    -i, --include-org-members <INCLUDE_ORG_MEMBERS>
-            Include organization members into the list [default: false]
+[REPO]
+        Name of the repository
+        
+        [default: gatsby]
+
+Options:
+-i, --include-org-members <INCLUDE_ORG_MEMBERS>
+        Include organization members into the list [default: false]
+        
+        [possible values: true, false]
+
+-e, --excludes <EXCLUDES>...
+        List of members to exclude from the list. Usage: -e=member1,member2 [default:
+        \\"renovate-bot\\", \\"renovate[bot]\\"]
+
+-h, --help
+        Print help information (use \`-h\` for a summary)
 ```
 
 You must have an environment variable called `GITHUB_ACCESS_TOKEN` either exported in your CLI or defined inside an `.env` file in the root of the project.
