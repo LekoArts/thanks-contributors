@@ -1,0 +1,7 @@
+{
+  "include": ["./__tests__/**/*", "./vitest.utils.ts"],
+  "compilerOptions": {
+    "types": ["vitest/globals"],
+    "esModuleInterop": true
+  }
+}

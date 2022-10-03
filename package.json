@@ -24,7 +24,10 @@
   ],
   "license": "MIT",
   "devDependencies": {
-    "@napi-rs/cli": "^2.11.4"
+    "@napi-rs/cli": "^2.11.4",
+    "execa": "^6.1.0",
+    "strip-ansi": "^7.0.1",
+    "vitest": "^0.23.4"
   },
   "engines": {
     "node": ">= 14"
@@ -35,6 +38,8 @@
     "build": "napi build --platform --release",
     "build:debug": "napi build --platform",
     "prepublishOnly": "napi prepublish -t npm",
-    "version": "napi version"
+    "version": "napi version",
+    "test:watch": "vitest watch",
+    "test": "vitest run"
   }
 }
