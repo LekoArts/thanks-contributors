@@ -6,7 +6,7 @@ extern crate napi_derive;
 use crate::api::{compare_commits, list_members};
 use crate::error::ThxContribError;
 use crate::utils::{get_current_date, get_pr_link, group_by_author, Entry};
-use clap::{FromArgMatches, Parser, CommandFactory};
+use clap::{CommandFactory, FromArgMatches, Parser};
 use dotenv::dotenv;
 use log::*;
 use napi::bindgen_prelude::{Error as NapiError, Result, Status};
