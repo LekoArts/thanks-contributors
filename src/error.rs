@@ -36,7 +36,7 @@ impl From<ThxContribError> for NapiError {
 }
 
 impl ThxContribError {
-  pub fn cli_error<I: clap::IntoApp>(err: clap::Error) -> Self {
+  pub fn cli_error<I: clap::CommandFactory>(err: clap::Error) -> Self {
     let mut app = I::command();
     let reason = err.format(&mut app);
 

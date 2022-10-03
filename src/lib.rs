@@ -6,7 +6,7 @@ extern crate napi_derive;
 use crate::api::{compare_commits, list_members};
 use crate::error::ThxContribError;
 use crate::utils::{get_current_date, get_pr_link, group_by_author, Entry};
-use clap::{FromArgMatches, IntoApp, Parser};
+use clap::{CommandFactory, FromArgMatches, Parser};
 use dotenv::dotenv;
 use log::*;
 use napi::bindgen_prelude::{Error as NapiError, Result, Status};
@@ -14,10 +14,11 @@ use regex::Regex;
 use std::env;
 use std::fs;
 
-mod api;
-mod error;
-mod utils;
+pub mod api;
+pub mod error;
+pub mod utils;
 
+#[allow(dead_code)]
 #[napi]
 async fn run(args: Vec<String>) -> Result<()> {
   dotenv().ok();
@@ -163,7 +164,8 @@ async fn run(args: Vec<String>) -> Result<()> {
 #[clap(
   author = "LekoArts",
   name = "@lekoarts/thanks-contributors",
-  about = "This little script accesses GitHub's API to get all contributors and their PRs between two distinct points in the history of commits. This is helpful for changelogs where you'd want to list all contributions for that release (so e.g. changes between v1 and v1.1)."
+  about = "Generate a list of contributors for a commit range",
+  long_about = "This little script accesses GitHub's API to get all contributors and their PRs between two distinct points in the history of commits. This is helpful for changelogs where you'd want to list all contributions for that release (so e.g. changes between v1 and v1.1)."
 )]
 #[clap(no_binary_name = true)]
 struct Cli {
@@ -186,10 +188,15 @@ struct Cli {
   #[clap(
     short,
     long,
-    multiple_values = true,
-    takes_value = true,
+    num_args = 1..,
     use_value_delimiter = true,
-    require_value_delimiter = true
+    value_delimiter = ',',
   )]
   excludes: Option<Vec<String>>,
+}
+
+#[test]
+fn verify_cli() {
+  use clap::CommandFactory;
+  Cli::command().debug_assert()
 }
