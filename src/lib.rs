@@ -14,10 +14,11 @@ use regex::Regex;
 use std::env;
 use std::fs;
 
-mod api;
-mod error;
-mod utils;
+pub mod api;
+pub mod error;
+pub mod utils;
 
+#[allow(dead_code)]
 #[napi]
 async fn run(args: Vec<String>) -> Result<()> {
   dotenv().ok();
