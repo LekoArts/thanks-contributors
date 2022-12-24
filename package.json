@@ -41,5 +41,6 @@
     "version": "napi version",
     "test:watch": "vitest watch",
     "test": "vitest run"
-  }
+  },
+  "packageManager": "yarn@3.3.1"
 }
