@@ -46,7 +46,7 @@ Options:
         Print help information (use \`-h\` for a summary)
 ```
 
-You must have an environment variable called `GITHUB_ACCESS_TOKEN` either exported in your CLI or defined inside an `.env` file in the root of the project.
+You must have an environment variable called `GITHUB_ACCESS_TOKEN` either exported in your CLI or defined inside an `.env` file in the directory you're running the CLI in.
 
 The script automatically excludes the members of the organization ("owner" in this case). If you want to exclude specific users, you'll need to provide the `--excludes` flag.
 
@@ -55,7 +55,7 @@ The results are stored inside a `output` folder in the current directory.
 ### Example
 
 ```shell
-npx @lekoarts/thanks-contributors gatsby@4.8.0-next.0 gatsby@4.8.0 gatsbyjs gatsby
+npx @lekoarts/thanks-contributors gatsby@5.1.0-next.0 gatsby@5.1.0 gatsbyjs gatsby
 ```
 
 ## Resulting output
