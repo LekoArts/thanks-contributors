@@ -124,3 +124,12 @@ Cargo.lock
 .env.*
 !.env.example
 output
+
+# Yarn Berry
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
