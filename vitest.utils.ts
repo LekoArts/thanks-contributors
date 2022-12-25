@@ -39,8 +39,8 @@ export function invokeCli(args: Array<string>): InvokeCliResult {
 	} catch (err) {
 		return {
 			exitCode: err.exitCode,
-			stdout: strip(err.stdout.toString()),
-			logs: createLogsMatcher(strip(err.stdout?.toString() || ``)),
+			stdout: strip(err.stderr.toString()),
+			logs: createLogsMatcher(strip(err.stderr?.toString() || ``)),
 		}
 	}
 }
