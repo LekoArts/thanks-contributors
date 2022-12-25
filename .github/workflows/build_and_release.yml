@@ -96,7 +96,6 @@ jobs:
         with:
           node-version: 16
           check-latest: true
-          cache: yarn
           architecture: ${{ matrix.settings.architecture }}
       - name: Install
         uses: actions-rs/toolchain@v1
@@ -119,11 +118,6 @@ jobs:
         with:
           path: ~/.cargo/git
           key: ${{ matrix.settings.target }}-node@16-cargo-index-trimmed-${{ hashFiles('**/Cargo.lock') }}
-      - name: Cache NPM dependencies
-        uses: actions/cache@v3
-        with:
-          path: node_modules
-          key: npm-cache-${{ matrix.settings.target }}-node@16-${{ hashFiles('yarn.lock') }}
       - name: Pull latest image
         run: ${{ matrix.settings.docker }}
         env:
@@ -134,7 +128,7 @@ jobs:
         if: ${{ matrix.settings.setup }}
         shell: bash
       - name: Install dependencies
-        run: yarn install --ignore-scripts --frozen-lockfile --registry https://registry.npmjs.org --network-timeout 300000
+        uses: ./.github/actions/yarn-install
       - name: Build
         run: ${{ matrix.settings.build }}
         shell: bash
@@ -156,14 +150,8 @@ jobs:
         with:
           node-version: 16
           check-latest: true
-          cache: yarn
-      - name: Cache NPM dependencies
-        uses: actions/cache@v3
-        with:
-          path: node_modules
-          key: npm-cache-test-linux-x64-gnu-node@16-${{ hashFiles('yarn.lock') }}
       - name: Install dependencies
-        run: yarn install --ignore-scripts --frozen-lockfile --registry https://registry.npmjs.org --network-timeout 300000
+        uses: ./.github/actions/yarn-install
       - name: Download artifacts
         uses: actions/download-artifact@v3
         with:
@@ -183,16 +171,8 @@ jobs:
         with:
           node-version: 16
           check-latest: true
-          cache: yarn
-      - name: Cache NPM dependencies
-        uses: actions/cache@v3
-        with:
-          path: node_modules
-          key: npm-cache-ubuntu-latest-${{ hashFiles('yarn.lock') }}
-          restore-keys: |
-            npm-cache-
       - name: Install dependencies
-        run: yarn install --ignore-scripts --frozen-lockfile --registry https://registry.npmjs.org --network-timeout 300000
+        uses: ./.github/actions/yarn-install
       - name: Download all artifacts
         uses: actions/download-artifact@v3
         with:
