@@ -13,7 +13,7 @@ describe(`cli`, () => {
 		expect(stdout).toMatchSnapshot()
 		expect(exitCode).toBe(2)
 	})
-  it(`should error on invalid commits range`, () => {
+	it(`should error on invalid commits range`, () => {
 		const { exitCode, stdout } = invokeCli([`100.0.1`, `100.0.2`])
 
 		expect(stdout).toMatchSnapshot()
