@@ -24,18 +24,18 @@ Arguments:
 
 [OWNER]
         Name of the owner/user/organization of the repository
-        
+
         [default: gatsbyjs]
 
 [REPO]
         Name of the repository
-        
+
         [default: gatsby]
 
 Options:
 -i, --include-org-members <INCLUDE_ORG_MEMBERS>
         Include organization members into the list [default: false]
-        
+
         [possible values: true, false]
 
 -e, --excludes <EXCLUDES>...

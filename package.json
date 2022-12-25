@@ -1,46 +1,54 @@
 {
-  "name": "@lekoarts/thanks-contributors",
-  "version": "1.1.0",
-  "main": "index.js",
-  "bin": "bin.js",
-  "description": "This little script accesses GitHub's API to get all contributors and their PRs between two distinct points in the history of commits. This is helpful for changelogs where you'd want to list all contributions for that release (so e.g. changes between v1 and v1.1).",
-  "types": "index.d.ts",
-  "napi": {
-    "name": "thanks-contributors",
-    "triples": {
-      "additional": [
-        "aarch64-apple-darwin",
-        "aarch64-unknown-linux-gnu",
-        "aarch64-unknown-linux-musl",
-        "armv7-unknown-linux-gnueabihf",
-        "x86_64-unknown-linux-musl"
-      ]
-    }
-  },
-  "files": [
-    "bin.js",
-    "index.js",
-    "index.d.ts"
-  ],
-  "license": "MIT",
-  "devDependencies": {
-    "@napi-rs/cli": "^2.11.4",
-    "execa": "^6.1.0",
-    "strip-ansi": "^7.0.1",
-    "vitest": "^0.23.4"
-  },
-  "engines": {
-    "node": ">= 14"
-  },
-  "scripts": {
-    "napi": "napi",
-    "artifacts": "napi artifacts",
-    "build": "napi build --platform --release",
-    "build:debug": "napi build --platform",
-    "prepublishOnly": "napi prepublish -t npm",
-    "version": "napi version",
-    "test:watch": "vitest watch",
-    "test": "vitest run"
-  },
-  "packageManager": "yarn@3.3.1"
+	"name": "@lekoarts/thanks-contributors",
+	"version": "1.1.0",
+	"main": "index.js",
+	"bin": "bin.js",
+	"description": "This little script accesses GitHub's API to get all contributors and their PRs between two distinct points in the history of commits. This is helpful for changelogs where you'd want to list all contributions for that release (so e.g. changes between v1 and v1.1).",
+	"types": "index.d.ts",
+	"napi": {
+		"name": "thanks-contributors",
+		"triples": {
+			"additional": [
+				"aarch64-apple-darwin",
+				"aarch64-unknown-linux-gnu",
+				"aarch64-unknown-linux-musl",
+				"armv7-unknown-linux-gnueabihf",
+				"x86_64-unknown-linux-musl"
+			]
+		}
+	},
+	"files": [
+		"bin.js",
+		"index.js",
+		"index.d.ts"
+	],
+	"license": "MIT",
+	"devDependencies": {
+		"@napi-rs/cli": "^2.13.3",
+		"@types/prettier": "^2",
+		"execa": "^6.1.0",
+		"prettier": "^2.8.1",
+		"strip-ansi": "^7.0.1",
+		"vitest": "^0.26.2"
+	},
+	"engines": {
+		"node": ">= 14"
+	},
+	"scripts": {
+		"napi": "napi",
+		"artifacts": "napi artifacts",
+		"build": "napi build --platform --release",
+		"build:debug": "napi build --platform",
+		"prepublishOnly": "napi prepublish -t npm",
+		"version": "napi version",
+		"test:watch": "vitest watch",
+		"test": "vitest run",
+		"format": "prettier --write ."
+	},
+	"prettier": {
+		"printWidth": 120,
+		"semi": false,
+		"trailingComma": "es5"
+	},
+	"packageManager": "yarn@3.3.1"
 }
