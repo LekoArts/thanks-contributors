@@ -128,8 +128,8 @@ output
 # Yarn Berry
 .pnp.*
 .yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/sdks
-!.yarn/versions
+
+npm
+src
+build.rs
+index.js

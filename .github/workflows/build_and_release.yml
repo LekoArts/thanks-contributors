@@ -3,18 +3,20 @@ name: Build & Release
 env:
   DEBUG: napi:*
   APP_NAME: thanks-contributors
-  MACOSX_DEPLOYMENT_TARGET: '10.13'
+  MACOSX_DEPLOYMENT_TARGET: "10.13"
+  RUST_BACKTRACE: 1
+  NODE_VERSION: 16
 
 on:
   push:
     branches:
       - main
     tags-ignore:
-      - '**'
+      - "**"
     paths-ignore:
-      - '**/*.md'
+      - "**/*.md"
       - LICENSE
-      - '**/*.gitignore'
+      - "**/*.gitignore"
       - .editorconfig
       - docs/**
   pull_request: null
@@ -25,174 +27,200 @@ concurrency:
 
 jobs:
   build:
-    if: '!contains(github.event.head_commit.message, ''skip ci'')'
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
-        settings:
-          - host: macos-latest
-            target: x86_64-apple-darwin
-            architecture: x64
-            build: |
-              yarn build
-              strip -x *.node
-          - host: windows-latest
-            build: yarn build
+        include:
+          - os: windows-latest
             target: x86_64-pc-windows-msvc
-            architecture: x64
-          - host: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            architecture: x64
-            docker: |
-              docker pull $DOCKER_REGISTRY_URL/napi-rs/napi-rs/nodejs-rust:lts-debian
-              docker tag $DOCKER_REGISTRY_URL/napi-rs/napi-rs/nodejs-rust:lts-debian builder
-            build: |
-              docker run --rm -v ~/.cargo/git:/root/.cargo/git -v ~/.cargo/registry:/root/.cargo/registry -v $(pwd):/build -w /build builder yarn build && strip *.node
-          - host: ubuntu-latest
-            target: x86_64-unknown-linux-musl
-            architecture: x64
-            docker: |
-              docker pull $DOCKER_REGISTRY_URL/napi-rs/napi-rs/nodejs-rust:lts-alpine
-              docker tag $DOCKER_REGISTRY_URL/napi-rs/napi-rs/nodejs-rust:lts-alpine builder
-            build: docker run --rm -v ~/.cargo/git:/root/.cargo/git -v ~/.cargo/registry:/root/.cargo/registry -v $(pwd):/build -w /build builder apk add perl && yarn build && strip *.node
-          - host: macos-latest
-            target: aarch64-apple-darwin
-            build: |
-              yarn build --target=aarch64-apple-darwin
-              strip -x *.node
-          - host: ubuntu-latest
-            architecture: x64
-            target: aarch64-unknown-linux-gnu
-            setup: |
-              sudo apt-get update
-              sudo apt-get install g++-aarch64-linux-gnu gcc-aarch64-linux-gnu -y
-            build: |
-              yarn build --target=aarch64-unknown-linux-gnu
-              aarch64-linux-gnu-strip *.node
-          - host: ubuntu-latest
-            architecture: x64
-            target: armv7-unknown-linux-gnueabihf
-            setup: |
-              sudo apt-get update
-              sudo apt-get install gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf -y
-            build: |
-              yarn build --target=armv7-unknown-linux-gnueabihf
-              arm-linux-gnueabihf-strip *.node
-          - host: ubuntu-latest
-            architecture: x64
-            target: aarch64-unknown-linux-musl
-            downloadTarget: aarch64-unknown-linux-musl
-            docker: |
-              docker pull ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
-              docker tag ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine builder
-            build: |
-              docker run --rm -v ~/.cargo/git:/root/.cargo/git -v ~/.cargo/registry:/root/.cargo/registry -v $(pwd):/build -w /build builder sh -c "apk add perl && yarn build --target=aarch64-unknown-linux-musl && /aarch64-linux-musl-cross/bin/aarch64-linux-musl-strip *.node"
-    name: ${{ matrix.settings.target }}
-    runs-on: ${{ matrix.settings.host }}
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            strip: strip -x # Must use -x on Mac OS. This produces larger results on Linux.
+    name: build-${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
       - name: Setup node
         uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: ${{ env.NODE_VERSION }}
           check-latest: true
-          cache: yarn
-          architecture: ${{ matrix.settings.architecture }}
-      - name: Install
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+      - name: Setup rust target
+        run: rustup target add ${{ matrix.target }}
+      - name: Install dependencies
+        uses: ./.github/actions/yarn-install
+      - name: Build release
+        run: yarn build
+        shell: bash
+      - name: Strip debug symbols
+        if: ${{ matrix.strip }}
+        run: ${{ matrix.strip }} *.node
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: bindings-${{ matrix.target }}
+          path: ${{ env.APP_NAME }}.*.node
+          if-no-files-found: error
+
+  build-apple-silicon:
+    name: build-apple-silicon
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          check-latest: true
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+      - name: Setup rust target
+        run: rustup target add aarch64-apple-darwin
+      - name: Install dependencies
+        uses: ./.github/actions/yarn-install
+      - name: Build release
+        run: |
+          sudo rm -Rf /Library/Developer/CommandLineTools/SDKs/*;
+          export CC=$(xcrun -f clang);
+          export CXX=$(xcrun -f clang++);
+          SYSROOT=$(xcrun --sdk macosx --show-sdk-path);
+          export CFLAGS="-isysroot $SYSROOT -isystem $SYSROOT";
+          yarn build --target aarch64-apple-darwin
+        shell: bash
+      - name: Strip debug symbols
+        run: strip -x *.node
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: bindings-aarch64-apple-darwin
+          path: ${{ env.APP_NAME }}.*.node
+          if-no-files-found: error
+
+  build-linux:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            strip: strip
+            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
+          - target: x86_64-unknown-linux-musl
+            strip: strip
+            setup: apk add perl
+            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
+          - target: aarch64-unknown-linux-musl
+            strip: aarch64-linux-musl-strip
+            setup: apk add perl
+            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
+          # Currently broken images
+          #
+          # - target: aarch64-unknown-linux-gnu
+          #   strip: aarch64-linux-gnu-strip
+          #   image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian-aarch64
+          # - target: armv7-unknown-linux-gnueabihf
+          #   strip: arm-linux-gnueabihf-strip
+          #   image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
+          #   setup: sudo apt-get update && sudo apt-get install gcc-arm-linux-gnueabihf -y
+    name: build-${{ matrix.target }}
+    runs-on: ubuntu-latest
+    container: ${{ matrix.image }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          check-latest: true
+      - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           override: true
           toolchain: stable
-          target: ${{ matrix.settings.target }}
-      - name: Generate Cargo.lock
-        uses: actions-rs/cargo@v1
+      - uses: goto-bus-stop/setup-zig@v2
+        if: ${{ matrix.target == 'armv7-unknown-linux-gnueabihf' }}
         with:
-          command: generate-lockfile
-      - name: Cache cargo registry
-        uses: actions/cache@v3
-        with:
-          path: ~/.cargo/registry
-          key: ${{ matrix.settings.target }}-node@16-cargo-registry-trimmed-${{ hashFiles('**/Cargo.lock') }}
-      - name: Cache cargo index
-        uses: actions/cache@v3
-        with:
-          path: ~/.cargo/git
-          key: ${{ matrix.settings.target }}-node@16-cargo-index-trimmed-${{ hashFiles('**/Cargo.lock') }}
-      - name: Cache NPM dependencies
-        uses: actions/cache@v3
-        with:
-          path: node_modules
-          key: npm-cache-${{ matrix.settings.target }}-node@16-${{ hashFiles('yarn.lock') }}
-      - name: Pull latest image
-        run: ${{ matrix.settings.docker }}
-        env:
-          DOCKER_REGISTRY_URL: ghcr.io
-        if: ${{ matrix.settings.docker }}
-      - name: Setup toolchain
-        run: ${{ matrix.settings.setup }}
-        if: ${{ matrix.settings.setup }}
+          version: 0.10.0
+      - name: Setup cross compile toolchain
+        if: ${{ matrix.setup }}
+        run: ${{ matrix.setup }}
         shell: bash
+      - name: Setup rust target
+        run: rustup target add ${{ matrix.target }}
       - name: Install dependencies
-        run: yarn install --ignore-scripts --frozen-lockfile --registry https://registry.npmjs.org --network-timeout 300000
-      - name: Build
-        run: ${{ matrix.settings.build }}
+        uses: ./.github/actions/yarn-install
+      - name: Build release
+        run: yarn build --target ${{ matrix.target }}
         shell: bash
+      - name: Strip debug symbols
+        if: ${{ matrix.strip }}
+        run: ${{ matrix.strip }} *.node
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: bindings-${{ matrix.settings.target }}
+          name: bindings-${{ matrix.target }}
           path: ${{ env.APP_NAME }}.*.node
           if-no-files-found: error
-  test:
-    name: Unit Tests
+
+  unit-tests:
+    name: Unit Tests - Node@${{ matrix.node }}
     needs:
-      - build
+      - build-linux
+    strategy:
+      fail-fast: false
+      matrix:
+        node:
+          - "16"
+          - "18"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: Setup node
         uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: ${{ matrix.node }}
           check-latest: true
-          cache: yarn
-      - name: Cache NPM dependencies
-        uses: actions/cache@v3
-        with:
-          path: node_modules
-          key: npm-cache-test-linux-x64-gnu-node@16-${{ hashFiles('yarn.lock') }}
       - name: Install dependencies
-        run: yarn install --ignore-scripts --frozen-lockfile --registry https://registry.npmjs.org --network-timeout 300000
+        uses: ./.github/actions/yarn-install
       - name: Download artifacts
         uses: actions/download-artifact@v3
         with:
           name: bindings-x86_64-unknown-linux-gnu
           path: .
-      - name: Run unit tests
+      - name: List packages
+        run: ls -R .
+        shell: bash
+      - name: Run Vitest
         run: yarn test
+        env:
+          GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   publish:
     name: Publish
     runs-on: ubuntu-latest
     needs:
-      - test
+      - build
+      - build-apple-silicon
+      - build-linux
+      - unit-tests
     steps:
       - uses: actions/checkout@v3
       - name: Setup node
         uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: ${{ env.NODE_VERSION }}
           check-latest: true
-          cache: yarn
-      - name: Cache NPM dependencies
-        uses: actions/cache@v3
-        with:
-          path: node_modules
-          key: npm-cache-ubuntu-latest-${{ hashFiles('yarn.lock') }}
-          restore-keys: |
-            npm-cache-
       - name: Install dependencies
-        run: yarn install --ignore-scripts --frozen-lockfile --registry https://registry.npmjs.org --network-timeout 300000
+        uses: ./.github/actions/yarn-install
       - name: Download all artifacts
         uses: actions/download-artifact@v3
         with:
