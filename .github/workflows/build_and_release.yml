@@ -4,7 +4,7 @@ env:
   DEBUG: napi:*
   APP_NAME: thanks-contributors
   MACOSX_DEPLOYMENT_TARGET: "10.13"
-  RUST_BACKTRACE: 1
+  RUST_BACKTRACE: full
   NODE_VERSION: 16
 
 on:
@@ -172,38 +172,6 @@ jobs:
           path: ${{ env.APP_NAME }}.*.node
           if-no-files-found: error
 
-  unit-tests:
-    name: Unit Tests - Node@${{ matrix.node }}
-    needs:
-      - build-linux
-    strategy:
-      fail-fast: false
-      matrix:
-        node:
-          - "16"
-          - "18"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Setup node
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node }}
-          check-latest: true
-      - name: Install dependencies
-        uses: ./.github/actions/yarn-install
-      - name: Download artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: bindings-x86_64-unknown-linux-gnu
-          path: .
-      - name: List packages
-        run: ls -R .
-        shell: bash
-      - name: Run Vitest
-        run: yarn test
-        env:
-          GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   publish:
     name: Publish
     runs-on: ubuntu-latest
@@ -211,7 +179,6 @@ jobs:
       - build
       - build-apple-silicon
       - build-linux
-      - unit-tests
     steps:
       - uses: actions/checkout@v3
       - name: Setup node
