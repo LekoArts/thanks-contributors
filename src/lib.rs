@@ -1,5 +1,3 @@
-#![deny(clippy::all)]
-
 #[macro_use]
 extern crate napi_derive;
 
@@ -195,8 +193,13 @@ struct Cli {
   excludes: Option<Vec<String>>,
 }
 
-#[test]
-fn verify_cli() {
-  use clap::CommandFactory;
-  Cli::command().debug_assert()
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn verify_cli() {
+    use clap::CommandFactory;
+    Cli::command().debug_assert()
+  }
 }
