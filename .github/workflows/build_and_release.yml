@@ -202,6 +202,8 @@ jobs:
         shell: bash
       - name: Run Vitest
         run: yarn test
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   publish:
     name: Publish
     runs-on: ubuntu-latest
