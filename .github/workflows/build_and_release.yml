@@ -124,12 +124,11 @@ jobs:
           #   image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
           - target: aarch64-unknown-linux-gnu
             strip: aarch64-linux-gnu-strip
-            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian-aarch64@sha256:4e170e00b4e33251a775bcadc34380a6a5a86611df132590885257e453646fdc
-            setup: sudo apt-get update && sudo apt-get install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu -y
+            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian-aarch64
           - target: armv7-unknown-linux-gnueabihf
             strip: arm-linux-gnueabihf-strip
-            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian@sha256:4e170e00b4e33251a775bcadc34380a6a5a86611df132590885257e453646fdc
-            setup: sudo apt-get update && sudo apt-get install gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf -y
+            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
+            setup: sudo apt-get update && sudo apt-get install gcc-arm-linux-gnueabihf -y
     name: build-${{ matrix.target }}
     runs-on: ubuntu-latest
     container: ${{ matrix.image }}
