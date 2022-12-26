@@ -120,20 +120,16 @@ jobs:
             image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
           - target: aarch64-unknown-linux-gnu
             strip: aarch64-unknown-linux-gnu-strip
-            setup: sudo apt-get update && sudo apt-get install g++-aarch64-linux-gnu gcc-aarch64-linux-gnu -y
-            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
+            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian-aarch64
           - target: armv7-unknown-linux-gnueabihf
             strip: arm-linux-gnueabihf-strip
-            setup: sudo apt-get update && sudo apt-get install gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf -y
-            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
+            setup: sudo apt-get update && sudo apt-get install gcc-arm-linux-gnueabihf -y
           - target: aarch64-unknown-linux-musl
             strip: aarch64-linux-musl-strip
             setup: apk add perl
             image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
     name: build-${{ matrix.target }}
     runs-on: ubuntu-latest
-    container:
-      image: ${{ matrix.image }}
     steps:
       - uses: actions/checkout@v3
       - name: Setup node
@@ -147,6 +143,10 @@ jobs:
           profile: minimal
           override: true
           toolchain: stable
+      - uses: goto-bus-stop/setup-zig@v2
+        if: ${{ matrix.target == 'armv7-unknown-linux-gnueabihf' }}
+        with:
+          version: 0.10.0
       - name: Setup cross compile toolchain
         if: ${{ matrix.setup }}
         run: ${{ matrix.setup }}
@@ -155,7 +155,15 @@ jobs:
         run: rustup target add ${{ matrix.target }}
       - name: Install dependencies
         uses: ./.github/actions/yarn-install
-      - name: Build release
+      - name: Build release (in Docker)
+        uses: addnab/docker-run-action@v3
+        if: ${{ matrix.image }}
+        with:
+          image: ${{ matrix.image }}
+          options: --user 0:0 -v ${{ github.workspace }}/.cargo-cache/git/db:/usr/local/cargo/git/db -v ${{ github.workspace }}/.cargo/registry/cache:/usr/local/cargo/registry/cache -v ${{ github.workspace }}/.cargo/registry/index:/usr/local/cargo/registry/index -v ${{ github.workspace }}:/build -w /build
+          run: yarn build --target ${{ matrix.target }}
+      - name: Build release (in Action)
+        if: ${{ !matrix.image }}
         run: yarn build --target ${{ matrix.target }}
         shell: bash
       - name: Strip debug symbols
