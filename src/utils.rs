@@ -2,15 +2,18 @@ use chrono::{
   format::{DelayedFormat, StrftimeItems},
   DateTime, Utc,
 };
-use std::collections::HashMap;
+use lazy_static::lazy_static;
+use regex::Regex;
+use std::collections::BTreeMap;
 
 pub fn get_current_date<'a>() -> DelayedFormat<StrftimeItems<'a>> {
   let now: DateTime<Utc> = Utc::now();
   now.format("%Y-%m-%d_%H-%M-%S")
 }
 
-pub fn group_by_author(input: Vec<Entry>) -> HashMap<String, Vec<Entry>> {
-  let mut groups: HashMap<String, Vec<Entry>> = HashMap::new();
+pub fn group_by_author(input: Vec<Entry>) -> BTreeMap<String, Vec<Entry>> {
+  // Use a BTreeMap since its keys are sorted alphabetically
+  let mut groups: BTreeMap<String, Vec<Entry>> = BTreeMap::new();
 
   for e in input {
     let group = groups.entry(e.author.clone()).or_insert(vec![]);
@@ -25,7 +28,33 @@ pub fn get_pr_link(entry: &Entry, owner: &str, repo: &str) -> String {
     return String::from("");
   };
 
-  format!(" [PR #{number}](https://github.com/{owner}/{repo}/pull/{number})")
+  format!("[PR #{number}](https://github.com/{owner}/{repo}/pull/{number})")
+}
+
+pub fn parse_msg_and_pr(input: &str) -> MsgAndPr {
+  lazy_static! {
+    // Regex is not dynamic so .unwrap is fine
+    static ref RE: Regex = Regex::new(r"^(?P<msg>.*)\(#(?P<pr>[0-9]+)\)").unwrap();
+  }
+
+  match RE.captures(input) {
+    Some(caps) => {
+      let message = caps.name("msg").map(|m| m.as_str().trim_end().to_string());
+      let pr_number = caps.name("pr").map(|m| m.as_str().to_string());
+
+      MsgAndPr { message, pr_number }
+    }
+    None => MsgAndPr {
+      message: None,
+      pr_number: None,
+    },
+  }
+}
+
+#[derive(PartialEq, Debug)]
+pub struct MsgAndPr {
+  pub message: Option<String>,
+  pub pr_number: Option<String>,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -40,7 +69,7 @@ pub struct Entry {
 mod tests {
   use super::*;
 
-  fn get_foo_entry() -> Entry {
+  fn foo_entry() -> Entry {
     Entry {
       author: String::from("foo"),
       author_url: None,
@@ -49,7 +78,7 @@ mod tests {
     }
   }
 
-  fn get_foo2_entry() -> Entry {
+  fn foo2_entry() -> Entry {
     Entry {
       author: String::from("foo"),
       author_url: None,
@@ -58,7 +87,7 @@ mod tests {
     }
   }
 
-  fn get_bar_entry() -> Entry {
+  fn bar_entry() -> Entry {
     Entry {
       author: String::from("bar"),
       author_url: None,
@@ -69,18 +98,18 @@ mod tests {
 
   #[test]
   fn group_by_author_correct() {
-    let input: Vec<Entry> = vec![get_foo_entry(), get_foo2_entry(), get_bar_entry()];
+    let input: Vec<Entry> = vec![foo_entry(), foo2_entry(), bar_entry()];
 
-    let mut assert = HashMap::new();
-    assert.insert(String::from("foo"), vec![get_foo_entry(), get_foo2_entry()]);
-    assert.insert(String::from("bar"), vec![get_bar_entry()]);
+    let mut assert = BTreeMap::new();
+    assert.insert(String::from("foo"), vec![foo_entry(), foo2_entry()]);
+    assert.insert(String::from("bar"), vec![bar_entry()]);
 
-    assert_eq!(group_by_author(input), assert);
+    assert_eq!(group_by_author(input), assert)
   }
 
   #[test]
   fn group_by_author_empty_input() {
-    assert_eq!(group_by_author(vec![]), HashMap::new())
+    assert_eq!(group_by_author(vec![]), BTreeMap::new())
   }
 
   #[test]
@@ -113,7 +142,51 @@ mod tests {
         "owner",
         "repo"
       ),
-      String::from(" [PR #123](https://github.com/owner/repo/pull/123)")
+      String::from("[PR #123](https://github.com/owner/repo/pull/123)")
+    )
+  }
+
+  #[test]
+  fn parse_msg_and_pr_no_result() {
+    assert_eq!(
+      parse_msg_and_pr("(((test)))"),
+      MsgAndPr {
+        message: None,
+        pr_number: None
+      }
+    )
+  }
+
+  #[test]
+  fn parse_msg_and_pr_correct() {
+    assert_eq!(
+      parse_msg_and_pr("fix(scope): Message (#123)"),
+      MsgAndPr {
+        message: Some(String::from("fix(scope): Message")),
+        pr_number: Some(String::from("123"))
+      }
+    )
+  }
+
+  #[test]
+  fn parse_msg_and_pr_correct_backport() {
+    assert_eq!(
+      parse_msg_and_pr("fix(scope): Message (#123) (#456)"),
+      MsgAndPr {
+        message: Some(String::from("fix(scope): Message (#123)")),
+        pr_number: Some(String::from("456"))
+      }
+    )
+  }
+
+  #[test]
+  fn parse_msg_and_pr_only_msg() {
+    assert_eq!(
+      parse_msg_and_pr("fix(scope): Message"),
+      MsgAndPr {
+        message: None,
+        pr_number: None
+      }
     )
   }
 }

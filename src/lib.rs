@@ -3,12 +3,12 @@ extern crate napi_derive;
 
 use crate::api::{compare_commits, list_members};
 use crate::error::ThxContribError;
-use crate::utils::{get_current_date, get_pr_link, group_by_author, Entry};
+use crate::utils::{get_current_date, get_pr_link, group_by_author, parse_msg_and_pr, Entry};
 use clap::{CommandFactory, FromArgMatches, Parser};
+use clap_verbosity_flag::Verbosity;
 use dotenv::dotenv;
-use log::*;
+use log::{debug, info};
 use napi::bindgen_prelude::{Error as NapiError, Result, Status};
-use regex::Regex;
 use std::env;
 use std::fs;
 
@@ -21,14 +21,15 @@ pub mod utils;
 async fn run(args: Vec<String>) -> Result<()> {
   dotenv().ok();
   let app = Cli::command();
-  stderrlog::new()
-    .module(module_path!())
-    .verbosity(2)
-    .init()
-    .unwrap();
+
   // Arguments are coming from bin.js
   let matches = app.get_matches_from(args);
   let cli = Cli::from_arg_matches(&matches).map_err(ThxContribError::cli_error::<Cli>)?;
+
+  env_logger::Builder::new()
+    .filter_level(cli.verbose.log_level_filter())
+    .init();
+
   // By default, don't include org members
   let should_include_org_members = cli.include_org_members.unwrap_or(false);
   // By default, exclude renovate bot
@@ -55,25 +56,14 @@ async fn run(args: Vec<String>) -> Result<()> {
     ));
   }
 
-  info!("Fetched {} commits", commits.commits.len(),);
-
-  // Regex is not dynamic so .unwrap is fine
-  let pr_regex = Regex::new(r"(.*)\(#([0-9]+)\)").unwrap();
+  info!("Fetched {} commits", commits.commits.len());
 
   let entries: Vec<Entry> = commits
     .commits
     .into_iter()
     .map(|c| {
       let first_line = c.commit.message.lines().next().map_or("", |f| f);
-
-      let msg_and_pr = match pr_regex.captures(first_line) {
-        Some(caps) => {
-          let msg = caps.get(1).map(|m| m.as_str().trim_end().to_string());
-          let pr = caps.get(2).map(|m| m.as_str().to_string());
-          (msg, pr)
-        }
-        None => (None, None),
-      };
+      let msg_and_pr = parse_msg_and_pr(first_line);
 
       let author = match &c.author {
         Some(author) => author.login.to_owned(),
@@ -84,8 +74,8 @@ async fn run(args: Vec<String>) -> Result<()> {
       Entry {
         author,
         author_url,
-        message: msg_and_pr.0,
-        pr_number: msg_and_pr.1,
+        message: msg_and_pr.message,
+        pr_number: msg_and_pr.pr_number,
       }
     })
     .filter(|i| {
@@ -109,7 +99,7 @@ async fn run(args: Vec<String>) -> Result<()> {
 
   for (author_name, author_entries) in groups {
     let md_author = match &author_entries[0].author_url {
-      Some(url) => format!("[{}]({})", author_name, url),
+      Some(url) => format!("[{author_name}]({url})"),
       None => author_name,
     };
 
@@ -129,18 +119,15 @@ async fn run(args: Vec<String>) -> Result<()> {
         }
       }
 
-      let text = format!("- {}\n{}", md_author, md_author_list);
+      let text = format!("- {md_author}\n{md_author_list}");
 
       output.push_str(&text);
     } else {
       let pr_link = get_pr_link(&author_entries[0], &cli.owner, &cli.repo);
 
       let text = match &author_entries[0].message {
-        Some(msg) => format!("- {}: {}{}\n", md_author, msg, pr_link),
-        None => format!(
-          "- {}: No message could be generated{}\n",
-          md_author, pr_link
-        ),
+        Some(msg) => format!("- {md_author}: {msg} {pr_link}\n"),
+        None => format!("- {md_author}: No message could be generated {pr_link}\n"),
       };
       output.push_str(&text);
     }
@@ -153,7 +140,7 @@ async fn run(args: Vec<String>) -> Result<()> {
   fs::create_dir_all(directory_path).unwrap();
   fs::write(&filepath, output).unwrap();
 
-  info!("Successfully created {}", &filepath.display());
+  println!("Successfully created {}", &filepath.display());
 
   Ok(())
 }
@@ -191,6 +178,8 @@ struct Cli {
     value_delimiter = ',',
   )]
   excludes: Option<Vec<String>>,
+  #[clap(flatten)]
+  verbose: Verbosity,
 }
 
 #[cfg(test)]
