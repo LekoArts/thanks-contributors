@@ -13,11 +13,10 @@ pub async fn compare_commits(
   let client = reqwest::Client::new();
   let response = client
     .get(format!(
-      "https://api.github.com/repos/{}/{}/compare/{}...{}",
-      owner, repo, base, head
+      "https://api.github.com/repos/{owner}/{repo}/compare/{base}...{head}"
     ))
     .header(USER_AGENT, "thanks-contributors")
-    .header(AUTHORIZATION, format!("token {}", gh_token))
+    .header(AUTHORIZATION, format!("token {gh_token}"))
     .send()
     .await
     .map_err(ThxContribError::reqwest_error)?
@@ -32,11 +31,10 @@ pub async fn list_members(owner: &str, gh_token: &str) -> Result<Vec<String>> {
   let client = reqwest::Client::new();
   let response = client
     .get(format!(
-      "https://api.github.com/orgs/{}/members?per_page=100",
-      owner
+      "https://api.github.com/orgs/{owner}/members?per_page=100"
     ))
     .header(USER_AGENT, "thanks-contributors")
-    .header(AUTHORIZATION, format!("token {}", gh_token))
+    .header(AUTHORIZATION, format!("token {gh_token}"))
     .send()
     .await
     .map_err(ThxContribError::reqwest_error)?
