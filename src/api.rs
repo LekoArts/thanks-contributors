@@ -9,7 +9,7 @@ pub async fn compare_commits(
   base: String,
   head: String,
   gh_token: &str,
-) -> Result<CompareCommitsResponse> {
+) -> Result<Vec<Commit>> {
   let client = reqwest::Client::new();
   let response = client
     .get(format!(
@@ -24,7 +24,7 @@ pub async fn compare_commits(
     .await
     .map_err(ThxContribError::reqwest_error)?;
 
-  Ok(response)
+  Ok(response.commits)
 }
 
 pub async fn list_members(owner: &str, gh_token: &str) -> Result<Vec<String>> {
@@ -42,7 +42,7 @@ pub async fn list_members(owner: &str, gh_token: &str) -> Result<Vec<String>> {
     .await
     .map_err(ThxContribError::reqwest_error)?;
 
-  let list_of_logins: Vec<String> = response.into_iter().map(|m| m.login).collect();
+  let list_of_logins = response.into_iter().map(|m| m.login).collect();
 
   Ok(list_of_logins)
 }

@@ -3,7 +3,7 @@ extern crate napi_derive;
 
 use crate::api::{compare_commits, list_members};
 use crate::error::ThxContribError;
-use crate::utils::{get_current_date, get_pr_link, group_by_author, parse_msg_and_pr, Entry};
+use crate::utils::{create_entries, create_output, get_current_date, group_by_author};
 use clap::{CommandFactory, FromArgMatches, Parser};
 use clap_verbosity_flag::Verbosity;
 use dotenv::dotenv;
@@ -19,11 +19,11 @@ pub mod utils;
 #[allow(dead_code)]
 #[napi]
 async fn run(args: Vec<String>) -> Result<()> {
+  // Support .env files
   dotenv().ok();
-  let app = Cli::command();
 
   // Arguments are coming from bin.js
-  let matches = app.get_matches_from(args);
+  let matches = Cli::command().get_matches_from(args);
   let cli = Cli::from_arg_matches(&matches).map_err(ThxContribError::cli_error::<Cli>)?;
 
   env_logger::Builder::new()
@@ -35,7 +35,7 @@ async fn run(args: Vec<String>) -> Result<()> {
   // By default, exclude renovate bot
   let parsed_excludes = match cli.excludes {
     Some(e) => e,
-    None => vec!["renovate[bot]".to_string(), "renovate-bot".into()],
+    None => vec!["renovate[bot]".to_string(), "renovate-bot".to_string()],
   };
 
   debug!("Parsed Excludes: {:#?}", parsed_excludes);
@@ -48,7 +48,7 @@ async fn run(args: Vec<String>) -> Result<()> {
   debug!("Commits: {:#?}", commits);
   debug!("Org members: {:#?}", org_members);
 
-  if commits.commits.is_empty() {
+  if commits.is_empty() {
     return Err(NapiError::new(
       Status::InvalidArg,
       "Couldn't find any relevant commits. Are you sure you used the correct head & base?"
@@ -56,82 +56,19 @@ async fn run(args: Vec<String>) -> Result<()> {
     ));
   }
 
-  info!("Fetched {} commits", commits.commits.len());
+  info!("Fetched {} commits", commits.len());
 
-  let entries: Vec<Entry> = commits
-    .commits
-    .into_iter()
-    .map(|c| {
-      let first_line = c.commit.message.lines().next().map_or("", |f| f);
-      let msg_and_pr = parse_msg_and_pr(first_line);
-
-      let author = match &c.author {
-        Some(author) => author.login.to_owned(),
-        None => c.commit.author.name,
-      };
-      let author_url = c.author.as_ref().map(|author| author.html_url.to_owned());
-
-      Entry {
-        author,
-        author_url,
-        message: msg_and_pr.message,
-        pr_number: msg_and_pr.pr_number,
-      }
-    })
-    .filter(|i| {
-      if should_include_org_members {
-        true
-      } else {
-        // Exclude members from the final list of entries
-        !parsed_excludes
-          .iter()
-          .chain(&org_members)
-          .any(|x| x == &i.author)
-      }
-    })
-    .collect();
+  let entries = create_entries(
+    commits,
+    should_include_org_members,
+    parsed_excludes,
+    org_members,
+  );
 
   info!("Process {} filtered commits", entries.len());
 
   let groups = group_by_author(entries);
-
-  let mut output = String::new();
-
-  for (author_name, author_entries) in groups {
-    let md_author = match &author_entries[0].author_url {
-      Some(url) => format!("[{author_name}]({url})"),
-      None => author_name,
-    };
-
-    if author_entries.len() > 1 {
-      let mut md_author_list = String::new();
-      for entry in author_entries {
-        match &entry.message {
-          Some(msg) => {
-            let line = format!(
-              "  - {}{}\n",
-              msg,
-              get_pr_link(&entry, &cli.owner, &cli.repo)
-            );
-            md_author_list.push_str(&line)
-          }
-          None => md_author_list.push_str(""),
-        }
-      }
-
-      let text = format!("- {md_author}\n{md_author_list}");
-
-      output.push_str(&text);
-    } else {
-      let pr_link = get_pr_link(&author_entries[0], &cli.owner, &cli.repo);
-
-      let text = match &author_entries[0].message {
-        Some(msg) => format!("- {md_author}: {msg} {pr_link}\n"),
-        None => format!("- {md_author}: No message could be generated {pr_link}\n"),
-      };
-      output.push_str(&text);
-    }
-  }
+  let output = create_output(groups, &cli.owner, &cli.repo);
 
   let current_dir = env::current_dir()?;
   let directory_path = current_dir.join("output");
