@@ -50,6 +50,12 @@ Options:
           List of members to exclude from the list. Usage: -e=member1,member2 [default:
           \\"renovate-bot\\", \\"renovate[bot]\\"]
 
+  -v, --verbose...
+          More output per occurrence
+
+  -q, --quiet...
+          Less output per occurrence
+
   -h, --help
           Print help information (use \`-h\` for a summary)"
 `;
