@@ -1,7 +1,7 @@
 // Vitest Snapshot v1
 
 exports[`cli > should error on invalid commits range 1`] = `
-"[Error: failed to parse response body: error decoding response body: missing field \`commits\` at line 1 column 110] {
+"[Error: Failed to parse response body: error decoding response body: missing field \`commits\` at line 1 column 110] {
   code: 'GenericFailure'
 }"
 `;
