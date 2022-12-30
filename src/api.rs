@@ -1,7 +1,8 @@
-use crate::error::ThxContribError;
 use napi::bindgen_prelude::Result;
 use reqwest::header::{AUTHORIZATION, USER_AGENT};
 use serde::Deserialize;
+
+use crate::error::reqwest_error;
 
 pub async fn compare_commits(
   owner: &str,
@@ -19,10 +20,10 @@ pub async fn compare_commits(
     .header(AUTHORIZATION, format!("token {gh_token}"))
     .send()
     .await
-    .map_err(ThxContribError::reqwest_error)?
+    .map_err(reqwest_error)?
     .json::<CompareCommitsResponse>()
     .await
-    .map_err(ThxContribError::reqwest_error)?;
+    .map_err(reqwest_error)?;
 
   Ok(response.commits)
 }
@@ -37,10 +38,10 @@ pub async fn list_members(owner: &str, gh_token: &str) -> Result<Vec<String>> {
     .header(AUTHORIZATION, format!("token {gh_token}"))
     .send()
     .await
-    .map_err(ThxContribError::reqwest_error)?
+    .map_err(reqwest_error)?
     .json::<Vec<Member>>()
     .await
-    .map_err(ThxContribError::reqwest_error)?;
+    .map_err(reqwest_error)?;
 
   let list_of_logins = response.into_iter().map(|m| m.login).collect();
 

@@ -106,13 +106,10 @@ pub fn create_output(groups: BTreeMap<String, Vec<Entry>>, owner: &str, repo: &s
     if author_entries.len() > 1 {
       let mut md_author_list = String::new();
       for entry in author_entries {
-        match &entry.message {
-          Some(msg) => {
-            let line = format!("  - {} {}\n", msg, get_pr_link(&entry, owner, repo));
-            md_author_list.push_str(&line)
-          }
-          None => md_author_list.push_str(""),
-        }
+        if let Some(msg) = &entry.message {
+          let line = format!("  - {} {}\n", msg, get_pr_link(&entry, owner, repo));
+          md_author_list.push_str(&line)
+        };
       }
 
       let text = format!("- {md_author}\n{md_author_list}");
@@ -121,11 +118,10 @@ pub fn create_output(groups: BTreeMap<String, Vec<Entry>>, owner: &str, repo: &s
     } else {
       let pr_link = get_pr_link(&author_entries[0], owner, repo);
 
-      let text = match &author_entries[0].message {
-        Some(msg) => format!("- {md_author}: {msg} {pr_link}\n"),
-        None => format!("- {md_author}: No message could be generated {pr_link}\n"),
+      if let Some(msg) = &author_entries[0].message {
+        let text = format!("- {md_author}: {msg} {pr_link}\n");
+        output.push_str(&text);
       };
-      output.push_str(&text);
     }
   }
 

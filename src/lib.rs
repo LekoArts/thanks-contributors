@@ -2,13 +2,13 @@
 extern crate napi_derive;
 
 use crate::api::{compare_commits, list_members};
-use crate::error::ThxContribError;
+use crate::error::{env_var_error, format_cli_error};
 use crate::utils::{create_entries, create_output, get_current_date, group_by_author};
 use clap::{CommandFactory, FromArgMatches, Parser};
 use clap_verbosity_flag::Verbosity;
 use dotenv::dotenv;
 use log::{debug, info};
-use napi::bindgen_prelude::{Error as NapiError, Result, Status};
+use napi::bindgen_prelude::{Error as NapiError, Result};
 use std::env;
 use std::fs;
 
@@ -24,7 +24,7 @@ async fn run(args: Vec<String>) -> Result<()> {
 
   // Arguments are coming from bin.js
   let matches = Cli::command().get_matches_from(args);
-  let cli = Cli::from_arg_matches(&matches).map_err(ThxContribError::cli_error::<Cli>)?;
+  let cli = Cli::from_arg_matches(&matches).map_err(format_cli_error::<Cli>)?;
 
   env_logger::Builder::new()
     .filter_level(cli.verbose.log_level_filter())
@@ -40,7 +40,7 @@ async fn run(args: Vec<String>) -> Result<()> {
 
   debug!("Parsed Excludes: {:#?}", parsed_excludes);
 
-  let gh_token = env::var("GITHUB_ACCESS_TOKEN").map_err(ThxContribError::from)?;
+  let gh_token = env::var("GITHUB_ACCESS_TOKEN").map_err(env_var_error)?;
 
   let commits = compare_commits(&cli.owner, &cli.repo, cli.base, cli.head, &gh_token).await?;
   let org_members = list_members(&cli.owner, &gh_token).await?;
@@ -49,8 +49,7 @@ async fn run(args: Vec<String>) -> Result<()> {
   debug!("Org members: {:#?}", org_members);
 
   if commits.is_empty() {
-    return Err(NapiError::new(
-      Status::InvalidArg,
+    return Err(NapiError::from_reason(
       "Couldn't find any relevant commits. Are you sure you used the correct head & base?"
         .to_owned(),
     ));
