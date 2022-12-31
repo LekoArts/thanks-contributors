@@ -102,6 +102,15 @@ switch (platform) {
     }
     break
   case 'darwin':
+    localFileExisted = existsSync(join(__dirname, 'thanks-contributors.darwin-universal.node'))
+    try {
+      if (localFileExisted) {
+        nativeBinding = require('./thanks-contributors.darwin-universal.node')
+      } else {
+        nativeBinding = require('@lekoarts/thanks-contributors-darwin-universal')
+      }
+      break
+    } catch {}
     switch (arch) {
       case 'x64':
         localFileExisted = existsSync(join(__dirname, 'thanks-contributors.darwin-x64.node'))

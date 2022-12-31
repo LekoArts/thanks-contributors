@@ -1,7 +1,8 @@
-use crate::error::ThxContribError;
 use napi::bindgen_prelude::Result;
 use reqwest::header::{AUTHORIZATION, USER_AGENT};
 use serde::Deserialize;
+
+use crate::error::reqwest_error;
 
 pub async fn compare_commits(
   owner: &str,
@@ -9,42 +10,40 @@ pub async fn compare_commits(
   base: String,
   head: String,
   gh_token: &str,
-) -> Result<CompareCommitsResponse> {
+) -> Result<Vec<Commit>> {
   let client = reqwest::Client::new();
   let response = client
     .get(format!(
-      "https://api.github.com/repos/{}/{}/compare/{}...{}",
-      owner, repo, base, head
+      "https://api.github.com/repos/{owner}/{repo}/compare/{base}...{head}"
     ))
     .header(USER_AGENT, "thanks-contributors")
-    .header(AUTHORIZATION, format!("token {}", gh_token))
+    .header(AUTHORIZATION, format!("token {gh_token}"))
     .send()
     .await
-    .map_err(ThxContribError::reqwest_error)?
+    .map_err(reqwest_error)?
     .json::<CompareCommitsResponse>()
     .await
-    .map_err(ThxContribError::reqwest_error)?;
+    .map_err(reqwest_error)?;
 
-  Ok(response)
+  Ok(response.commits)
 }
 
 pub async fn list_members(owner: &str, gh_token: &str) -> Result<Vec<String>> {
   let client = reqwest::Client::new();
   let response = client
     .get(format!(
-      "https://api.github.com/orgs/{}/members?per_page=100",
-      owner
+      "https://api.github.com/orgs/{owner}/members?per_page=100"
     ))
     .header(USER_AGENT, "thanks-contributors")
-    .header(AUTHORIZATION, format!("token {}", gh_token))
+    .header(AUTHORIZATION, format!("token {gh_token}"))
     .send()
     .await
-    .map_err(ThxContribError::reqwest_error)?
+    .map_err(reqwest_error)?
     .json::<Vec<Member>>()
     .await
-    .map_err(ThxContribError::reqwest_error)?;
+    .map_err(reqwest_error)?;
 
-  let list_of_logins: Vec<String> = response.into_iter().map(|m| m.login).collect();
+  let list_of_logins = response.into_iter().map(|m| m.login).collect();
 
   Ok(list_of_logins)
 }

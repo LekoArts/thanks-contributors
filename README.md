@@ -16,39 +16,46 @@ contributor and their contribution.
 Usage: @lekoarts/thanks-contributors [OPTIONS] <BASE> <HEAD> [OWNER] [REPO]
 
 Arguments:
-<BASE>
-        Pointer from where to start looking for changes
+  <BASE>
+          Pointer from where to start looking for changes
 
-<HEAD>
-        Pointer until where to stop looking for changes
+  <HEAD>
+          Pointer until where to stop looking for changes
 
-[OWNER]
-        Name of the owner/user/organization of the repository
+  [OWNER]
+          Name of the owner/user/organization of the repository
 
-        [default: gatsbyjs]
+          [default: gatsbyjs]
 
-[REPO]
-        Name of the repository
+  [REPO]
+          Name of the repository
 
-        [default: gatsby]
+          [default: gatsby]
 
 Options:
--i, --include-org-members <INCLUDE_ORG_MEMBERS>
-        Include organization members into the list [default: false]
+  -i, --include-org-members <INCLUDE_ORG_MEMBERS>
+          Include organization members into the list [default: false]
 
-        [possible values: true, false]
+          [possible values: true, false]
 
--e, --excludes <EXCLUDES>...
-        List of members to exclude from the list. Usage: -e=member1,member2 [default:
-        \\"renovate-bot\\", \\"renovate[bot]\\"]
+  -e, --excludes <EXCLUDES>...
+          List of members to exclude from the list. Usage: -e=member1,member2 [default: "renovate-bot", "renovate[bot]"]
 
--h, --help
-        Print help information (use \`-h\` for a summary)
+  -v, --verbose...
+          More output per occurrence
+
+  -q, --quiet...
+          Less output per occurrence
+
+  -h, --help
+          Print help information (use `-h` for a summary)
 ```
 
 You must have an environment variable called `GITHUB_ACCESS_TOKEN` either exported in your CLI or defined inside an `.env` file in the directory you're running the CLI in.
 
 The script automatically excludes the members of the organization ("owner" in this case). If you want to exclude specific users, you'll need to provide the `--excludes` flag.
+
+You can use the options `-v` to `-vvvv` to display additional logging (warnings, info, debug, trace).
 
 The results are stored inside a `output` folder in the current directory.
 
