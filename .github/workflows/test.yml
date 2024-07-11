@@ -24,30 +24,30 @@ jobs:
       RUST_BACKTRACE: full
       RUSTFLAGS: -D warnings
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
       - run: cargo test --all-features
   test-js:
-    name: Unit Tests - Node@${{ matrix.node }}
+    name: Unit Tests - Node ${{ matrix.node }}
     strategy:
       fail-fast: false
       matrix:
         node:
-          - "16"
           - "18"
+          - "20"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
           check-latest: true
       - name: Install dependencies
         uses: ./.github/actions/yarn-install
       - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
       - name: Build
         run: yarn build
       - name: Run Vitest

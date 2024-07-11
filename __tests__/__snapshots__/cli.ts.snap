@@ -1,19 +1,19 @@
-// Vitest Snapshot v1
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`cli > should error on invalid commits range 1`] = `
-"[Error: Failed to parse response body: error decoding response body: missing field \`commits\` at line 1 column 110] {
+"[Error: Failed to parse response body: error decoding response body: missing field \`commits\` at line 1 column 125] {
   code: 'GenericFailure'
 }"
 `;
 
 exports[`cli > should error without required arguments 1`] = `
-"error: The following required arguments were not provided:
+"error: the following required arguments were not provided:
   <BASE>
   <HEAD>
 
 Usage: @lekoarts/thanks-contributors <BASE> <HEAD> [OWNER] [REPO]
 
-For more information try '--help'"
+For more information, try '--help'."
 `;
 
 exports[`cli > should show help command 1`] = `
@@ -48,14 +48,14 @@ Options:
 
   -e, --excludes <EXCLUDES>...
           List of members to exclude from the list. Usage: -e=member1,member2 [default:
-          \\"renovate-bot\\", \\"renovate[bot]\\"]
+          "renovate-bot", "renovate[bot]"]
 
   -v, --verbose...
-          More output per occurrence
+          Increase logging verbosity
 
   -q, --quiet...
-          Less output per occurrence
+          Decrease logging verbosity
 
   -h, --help
-          Print help information (use \`-h\` for a summary)"
+          Print help (see a summary with '-h')"
 `;
