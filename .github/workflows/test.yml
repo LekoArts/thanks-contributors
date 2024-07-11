@@ -25,6 +25,7 @@ jobs:
       RUSTFLAGS: -D warnings
     steps:
       - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: cargo test --all-features
   test-js:
@@ -45,6 +46,7 @@ jobs:
           check-latest: true
       - name: Install dependencies
         uses: ./.github/actions/yarn-install
+      - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Build
         run: yarn build

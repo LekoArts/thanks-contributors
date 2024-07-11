@@ -45,6 +45,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           check-latest: true
+      - uses: dtolnay/rust-toolchain@stable
       - name: Setup rust target
         run: rustup target add ${{ matrix.target }}
       - name: Install dependencies
@@ -72,6 +73,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           check-latest: true
+      - uses: dtolnay/rust-toolchain@stable
       - name: Setup rust target
         run: rustup target add aarch64-apple-darwin
       - name: Install dependencies
@@ -129,6 +131,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           check-latest: true
+      - uses: dtolnay/rust-toolchain@stable
       - uses: goto-bus-stop/setup-zig@v2
         if: ${{ matrix.target == 'armv7-unknown-linux-gnueabihf' }}
         with:
